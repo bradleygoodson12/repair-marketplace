@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  PRO
+  ADMIN
+}
+
+enum RequestStatus {
+  OPEN
+  QUOTED
+  BOOKED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
+enum BookingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(CUSTOMER)
+  image         String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+
+  proProfile    ProProfile?
+  properties    Property[]
+  requests      ServiceRequest[] @relation("CustomerRequests")
+  sentMessages  Message[]
+  reviewsWritten Review[]        @relation("ReviewsWritten")
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Service pro's public profile + business info. Kept separate from User so
+// a customer-only account never carries pro-specific fields.
+model ProProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  businessName      String
+  bio               String   @db.Text
+  yearsExperience   Int      @default(0)
+  hourlyRateCents   Int?
+  serviceRadiusMiles Int     @default(15)
+  serviceZip        String
+  verified          Boolean  @default(false)
+  avgRating         Float    @default(0)
+  reviewCount       Int      @default(0)
+  stripeAccountId   String?  // future: Stripe Connect payout account
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories ProProfileCategory[]
+  quotes     Quote[]
+  reviews    Review[]            @relation("ReviewsReceived")
+
+  @@index([serviceZip])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String
+  icon        String
+
+  proProfiles ProProfileCategory[]
+  requests    ServiceRequest[]
+}
+
+model ProProfileCategory {
+  proProfileId String
+  categoryId   String
+
+  proProfile ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([proProfileId, categoryId])
+}
+
+// A physical address tied to a customer. Modeled independently of
+// ServiceRequest so one property can accumulate multiple job requests over
+// time, and so it can later be enriched from a real estate data API
+// (parcel details, year built, square footage, valuation, etc.) via
+// externalProvider/externalId/enrichmentData without a schema change.
+model Property {
+  id                 String    @id @default(cuid())
+  ownerId            String
+  addressLine1       String
+  addressLine2       String?
+  city               String
+  state              String
+  zip                String
+  lat                Float?
+  lng                Float?
+  propertyType       String?   // e.g. single_family, condo, townhouse
+  yearBuilt          Int?
+  squareFeet         Int?
+  externalProvider   String?   // e.g. "zillow", "attom", "estated"
+  externalId         String?   // provider's record id for this property
+  enrichmentData     Json?     // raw provider payload for future use
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  owner    User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  requests ServiceRequest[]
+
+  @@index([ownerId])
+  @@index([zip])
+}
+
+model ServiceRequest {
+  id                  String        @id @default(cuid())
+  customerId          String
+  propertyId          String
+  categoryId          String
+  title               String
+  description         String        @db.Text
+  status              RequestStatus @default(OPEN)
+  budgetMinCents       Int?
+  budgetMaxCents       Int?
+  preferredDate       DateTime?
+  photoUrls           String[]      @default([])
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  customer User      @relation("CustomerRequests", fields: [customerId], references: [id], onDelete: Cascade)
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category Category  @relation(fields: [categoryId], references: [id])
+  quotes   Quote[]
+  booking  Booking?
+  messages Message[]
+
+  @@index([customerId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model Quote {
+  id                   String      @id @default(cuid())
+  requestId            String
+  proProfileId         String
+  priceCents           Int
+  message              String      @db.Text
+  estimatedDurationDays Int?
+  status               QuoteStatus @default(PENDING)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  request    ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  proProfile ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  booking    Booking?
+
+  @@unique([requestId, proProfileId])
+  @@index([requestId])
+}
+
+model Booking {
+  id                    String        @id @default(cuid())
+  requestId             String        @unique
+  quoteId               String        @unique
+  scheduledDate         DateTime
+  status                BookingStatus @default(SCHEDULED)
+  totalCents            Int
+  paymentStatus         PaymentStatus @default(UNPAID)
+  stripePaymentIntentId String?
+  createdAt             DateTime      @default(now())
+  completedAt           DateTime?
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  review  Review?
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  requestId String
+  senderId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender  User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  bookingId    String   @unique
+  proProfileId String
+  customerId   String
+  rating       Int
+  comment      String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  booking    Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  proProfile ProProfile @relation("ReviewsReceived", fields: [proProfileId], references: [id], onDelete: Cascade)
+  customer   User       @relation("ReviewsWritten", fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([proProfileId])
+}
