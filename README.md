@@ -5,7 +5,7 @@ send quotes, and bookings are paid for securely on-platform.
 
 ## Stack
 
-- **Next.js 14** (App Router) + **TypeScript**
+- **Next.js 16** (App Router) + **TypeScript**
 - **Prisma** ORM on **PostgreSQL**
 - **NextAuth** (credentials-based auth, JWT sessions)
 - **Tailwind CSS** for styling
@@ -50,6 +50,18 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 Copy the printed webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+## Deploying (e.g. to Vercel)
+
+The `vercel-build` script (`prisma generate && prisma db push --accept-data-loss && tsx prisma/seed.ts && next build`)
+runs automatically on platforms like Vercel that look for it, so a deploy also syncs the schema and
+seeds categories/demo accounts with no extra manual step. You only need to set the environment
+variables from `.env.example` in the platform's dashboard.
+
+`db push --accept-data-loss` and reseeding on every deploy are fine for early development, but
+switch to `prisma migrate deploy` with real migration files (see `npm run db:migrate` locally)
+before this holds real user data — `db push` can silently drop columns/tables that no longer
+match the schema.
 
 ## Project structure
 
