@@ -11,11 +11,13 @@ const extractedRepairItemSchema = z.object({
   title: z.string(),
   description: z.string(),
   categorySlug: z.string(),
-  pageNumber: z.number().int(),
+  // Claude's tool-use occasionally returns a numeric field as a numeric
+  // string even when the schema says integer — coerce rather than reject.
+  pageNumber: z.coerce.number().int(),
 });
 
 const extractedRepairDocumentSchema = z.object({
-  items: z.array(extractedRepairItemSchema).default([]),
+  items: z.array(z.unknown()).default([]),
   propertyAddressLine1: z.string().optional(),
   propertyCity: z.string().optional(),
   propertyState: z.string().optional(),
@@ -23,7 +25,13 @@ const extractedRepairDocumentSchema = z.object({
 });
 
 export type ExtractedRepairItem = z.infer<typeof extractedRepairItemSchema>;
-export type ExtractedRepairDocument = z.infer<typeof extractedRepairDocumentSchema>;
+export interface ExtractedRepairDocument {
+  items: ExtractedRepairItem[];
+  propertyAddressLine1?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  propertyZip?: string;
+}
 
 /**
  * Sends a PDF (by its public URL) to Claude and asks it to break the document
@@ -113,10 +121,37 @@ If the document clearly states a property address, include it; otherwise omit th
     throw new Error('Claude did not return structured repair items.');
   }
 
+  const preview = JSON.stringify(toolUseBlock.input).slice(0, 500);
+
   const parsed = extractedRepairDocumentSchema.safeParse(toolUseBlock.input);
   if (!parsed.success) {
-    throw new Error("Claude's response didn't match the expected format — please try again.");
+    throw new Error(`Claude's response didn't match the expected format. Raw response: ${preview}`);
   }
 
-  return parsed.data;
+  // Validate items individually so one malformed entry doesn't discard the
+  // whole document — this is the step that previously failed all-or-nothing.
+  const validItems: ExtractedRepairItem[] = [];
+  const itemErrors: string[] = [];
+  for (const rawItem of parsed.data.items) {
+    const itemResult = extractedRepairItemSchema.safeParse(rawItem);
+    if (itemResult.success) {
+      validItems.push(itemResult.data);
+    } else {
+      itemErrors.push(itemResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', '));
+    }
+  }
+
+  if (validItems.length === 0 && parsed.data.items.length > 0) {
+    throw new Error(
+      `Claude returned ${parsed.data.items.length} item(s) but none matched the expected shape. First error: ${itemErrors[0]}. Raw response: ${preview}`,
+    );
+  }
+
+  return {
+    items: validItems,
+    propertyAddressLine1: parsed.data.propertyAddressLine1,
+    propertyCity: parsed.data.propertyCity,
+    propertyState: parsed.data.propertyState,
+    propertyZip: parsed.data.propertyZip,
+  };
 }
