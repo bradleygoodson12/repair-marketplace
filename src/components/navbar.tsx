@@ -23,12 +23,18 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <Link
-                href={session.user.role === 'PRO' ? '/dashboard/pro' : '/dashboard/customer'}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
+              {session.user.role === 'ADMIN' ? (
+                <Link href="/admin" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                  Admin
+                </Link>
+              ) : (
+                <Link
+                  href={session.user.role === 'PRO' ? '/dashboard/pro' : '/dashboard/customer'}
+                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Dashboard
+                </Link>
+              )}
               <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
                 Sign out
               </Button>

@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 export default async function CustomerDashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login');
+  if (session.user.role === 'ADMIN') redirect('/admin');
   if (session.user.role !== 'CUSTOMER') redirect('/dashboard/pro');
 
   const requests = await prisma.serviceRequest.findMany({

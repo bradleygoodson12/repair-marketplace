@@ -14,6 +14,7 @@ import { ProProfileForm } from './profile-form';
 export default async function ProDashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login');
+  if (session.user.role === 'ADMIN') redirect('/admin');
   if (session.user.role !== 'PRO') redirect('/dashboard/customer');
 
   const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });

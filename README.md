@@ -24,6 +24,17 @@ send quotes, and bookings are paid for securely on-platform.
 
 `Message`s are threaded per `ServiceRequest` between the customer and any pro who has quoted.
 
+## Admin panel
+
+Accounts with `role: ADMIN` get an `/admin` link in place of the regular dashboard link, covering:
+- **Overview** — platform-wide counts and paid revenue.
+- **Users** — every account, with a suspend/unsuspend toggle (suspended accounts can't log in).
+- **Pros** — every pro profile, with a verified/unverified toggle.
+- **Listings** — every job request, with a one-click cancel for bad listings.
+
+There's no self-serve way to become an admin — promote a user by hand (`UPDATE "User" SET role =
+'ADMIN' WHERE email = '...'`) or seed one, as `prisma/seed.ts` does for `admin@example.com`.
+
 ## Designed for future real-estate API integration
 
 The `Property` model intentionally carries `externalProvider`, `externalId`, and a free-form
@@ -42,6 +53,7 @@ npm run dev
 ```
 
 Seeded demo logins (password: `password123`):
+- `admin@example.com` — see the admin panel at `/admin`
 - `customer@example.com`
 - `jamie.pro@example.com` / `morgan.pro@example.com` / `riley.pro@example.com`
 
