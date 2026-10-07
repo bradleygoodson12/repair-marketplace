@@ -127,23 +127,31 @@ If the document clearly states a property address, include it; otherwise omit th
   // string instead of a native array (seen in practice on larger
   // extractions) -- normalize before validating.
   let normalizedInput = toolUseBlock.input;
+  let itemsParseError: string | null = null;
   if (
     normalizedInput &&
     typeof normalizedInput === 'object' &&
     'items' in normalizedInput &&
     typeof (normalizedInput as { items: unknown }).items === 'string'
   ) {
+    const itemsString = (normalizedInput as { items: string }).items;
     try {
-      const parsedItems = JSON.parse((normalizedInput as { items: string }).items);
+      const parsedItems = JSON.parse(itemsString);
       normalizedInput = { ...normalizedInput, items: parsedItems };
-    } catch {
-      // Leave as-is; the zod validation below will produce a clear error.
+    } catch (e) {
+      itemsParseError = `items was a ${itemsString.length}-char string; JSON.parse failed: ${
+        e instanceof Error ? e.message : String(e)
+      }. Last 300 chars: ${itemsString.slice(-300)}`;
     }
   }
 
   const parsed = extractedRepairDocumentSchema.safeParse(normalizedInput);
   if (!parsed.success) {
-    throw new Error(`Claude's response didn't match the expected format. Raw response: ${preview}`);
+    throw new Error(
+      `Claude's response didn't match the expected format. ${
+        itemsParseError ?? `Zod issues: ${JSON.stringify(parsed.error.issues).slice(0, 300)}`
+      } Raw response (first 500 chars): ${preview}`,
+    );
   }
 
   // Validate items individually so one malformed entry doesn't discard the
