@@ -10,6 +10,7 @@ export interface ExtractedRepairItem {
   title: string;
   description: string;
   categorySlug: string;
+  pageNumber: number;
 }
 
 export interface ExtractedRepairDocument {
@@ -61,8 +62,12 @@ export async function extractRepairItemsFromPdf(
                     type: 'string',
                     description: 'The single best-matching category slug from the provided list',
                   },
+                  pageNumber: {
+                    type: 'integer',
+                    description: '1-indexed page number this item (and any related photo) appears on',
+                  },
                 },
-                required: ['title', 'description', 'categorySlug'],
+                required: ['title', 'description', 'categorySlug', 'pageNumber'],
               },
             },
           },
@@ -85,6 +90,8 @@ export async function extractRepairItemsFromPdf(
 
 For each item, pick the single best-matching category slug from this list (use "handyman" only if nothing else fits):
 ${categoryList}
+
+Also record which page number each item appears on — this is used to attach that page's photo to the request, so accuracy matters here.
 
 If the document clearly states a property address, include it; otherwise omit those fields.`,
           },

@@ -53,10 +53,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     data: { ownerId: session.user.id, ...property },
   });
 
+  const lineItemById = new Map(document.lineItems.map((li) => [li.id, li]));
   const created: { id: string; title: string }[] = [];
 
   await prisma.$transaction(async (tx) => {
     for (const item of items) {
+      const pageImageUrl = lineItemById.get(item.id)?.pageImageUrl;
       const request = await tx.serviceRequest.create({
         data: {
           customerId: session.user.id,
@@ -64,6 +66,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           categoryId: item.categoryId,
           title: item.title,
           description: item.description,
+          photoUrls: pageImageUrl ? [pageImageUrl] : [],
         },
       });
       await tx.repairLineItem.update({

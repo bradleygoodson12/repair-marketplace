@@ -306,6 +306,8 @@ model RepairLineItem {
   description      String   @db.Text
   suggestedCategoryId String?
   categoryId       String?
+  pageNumber       Int?
+  pageImageUrl     String?
   selected         Boolean  @default(true)
   serviceRequestId String?  @unique
   createdAt        DateTime @default(now())

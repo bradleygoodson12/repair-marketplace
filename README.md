@@ -100,18 +100,30 @@ one-job form. The flow:
    `extractRepairItemsFromPdf` (`src/lib/anthropic.ts`), which sends the PDF's public URL straight
    to Claude via a `document` content block (no server-side text extraction needed) and forces
    structured output via tool-use: one `RepairLineItem` per distinct repair, each tagged with the
-   best-matching category slug from the live category list, plus the property address if the
-   document states one.
-3. `/request/upload/[id]` shows an editable review screen — property address (prefilled if
-   extracted), and each line item with its title/description/category and an include/exclude
-   checkbox.
-4. `POST /api/repair-documents/[id]/submit` creates one `Property` and one `ServiceRequest` per
-   selected item, so each repair flows through the exact same quoting/messaging/payment pipeline
-   as a manually-posted job, just pre-sorted by category.
+   best-matching category slug from the live category list and the 1-indexed page it appears on,
+   plus the property address if the document states one.
+3. The route then renders each referenced page to a PNG (`src/lib/pdf-render.ts`, using `unpdf` +
+   the official `pdfjs-dist` Node build + `@napi-rs/canvas`) and uploads it via `put()`, so each
+   line item can carry a real image of its source page — including any embedded inspection photo
+   and the surrounding notes — not just extracted text. A rendering failure is non-fatal; the item
+   is simply created without a photo.
+4. `/request/upload/[id]` shows an editable review screen — property address (prefilled if
+   extracted), and each line item with its rendered page thumbnail, title/description/category,
+   and an include/exclude checkbox.
+5. `POST /api/repair-documents/[id]/submit` creates one `Property` and one `ServiceRequest` per
+   selected item (carrying its page image into `photoUrls`), so each repair flows through the
+   exact same quoting/messaging/payment pipeline as a manually-posted job, just pre-sorted by
+   category and with a photo attached.
 
 Requires `ANTHROPIC_API_KEY` (from console.anthropic.com — usage-based billing, no fixed fee).
 Without it, document uploads will fail at the analysis step; everything else in the app is
 unaffected.
+
+**Bundler note:** `@napi-rs/canvas` (native addon) and `pdfjs-dist` (resolves its worker script
+relative to its own file at runtime) both break if Turbopack bundles/moves them, so both are
+listed in `next.config.js`'s `serverExternalPackages` to load via plain `require()` instead. If
+page-image rendering ever throws "Cannot find module .../pdf.worker.mjs" or an addon-placement
+error, check that list first.
 
 ## Deploying (e.g. to Vercel)
 

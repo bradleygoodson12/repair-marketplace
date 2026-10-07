@@ -22,6 +22,9 @@ interface DocumentProp {
   lineItems: RepairLineItem[];
 }
 
+const pageImageById = (document: DocumentProp, id: string) =>
+  document.lineItems.find((i) => i.id === id)?.pageImageUrl ?? null;
+
 interface ItemState {
   id: string;
   title: string;
@@ -137,6 +140,14 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
                   checked={item.selected}
                   onChange={(e) => updateItem(item.id, { selected: e.target.checked })}
                 />
+                {pageImageById(document, item.id) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pageImageById(document, item.id)!}
+                    alt="Document page"
+                    className="h-24 w-20 flex-shrink-0 rounded border border-gray-200 object-cover object-top"
+                  />
+                )}
                 <div className="flex-1">
                   <Input
                     className="mb-2 font-medium"

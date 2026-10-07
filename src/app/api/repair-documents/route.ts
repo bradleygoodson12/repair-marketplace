@@ -1,9 +1,11 @@
+import { put } from '@vercel/blob';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
+import { renderPdfPages } from '@/lib/pdf-render';
 import { prisma } from '@/lib/prisma';
 
 // Claude can take well past Vercel's default function timeout to read and
@@ -46,6 +48,29 @@ export async function POST(req: Request) {
       throw new Error("We couldn't find any repair items in that document.");
     }
 
+    // Best-effort: render the page each item came from and attach it as a
+    // photo. A rendering failure here shouldn't fail the whole upload —
+    // the extracted items are still useful without page images.
+    const pageImageUrls = new Map<number, string>();
+    try {
+      const pdfResponse = await fetch(fileUrl);
+      const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+      const pageNumbers = extracted.items.map((item) => item.pageNumber);
+      const rendered = await renderPdfPages(pdfBytes, pageNumbers);
+
+      for (const [pageNumber, pngBuffer] of rendered) {
+        const blob = await put(`repair-docs/page-${pageNumber}.png`, pngBuffer, {
+          access: 'public',
+          addRandomSuffix: true,
+          contentType: 'image/png',
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        });
+        pageImageUrls.set(pageNumber, blob.url);
+      }
+    } catch {
+      // Leave pageImageUrls empty; items are created without photos below.
+    }
+
     await prisma.$transaction([
       prisma.repairDocument.update({
         where: { id: document.id },
@@ -67,6 +92,8 @@ export async function POST(req: Request) {
             description: item.description,
             suggestedCategoryId: matched?.id ?? null,
             categoryId: matched?.id ?? null,
+            pageNumber: item.pageNumber,
+            pageImageUrl: pageImageUrls.get(item.pageNumber) ?? null,
           };
         }),
       }),
