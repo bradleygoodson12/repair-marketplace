@@ -56,10 +56,18 @@ Copy the printed webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
 ### Photo uploads (Vercel Blob)
 
 Job-request photos upload directly from the browser to Vercel Blob storage via `/api/upload`
-(see `src/components/photo-uploader.tsx`). On Vercel, go to your project's **Storage** tab →
-**Create Database** → **Blob**, and connect it to the project — this automatically adds a
-`BLOB_READ_WRITE_TOKEN` environment variable, no manual copying needed. For local dev, run
-`vercel env pull .env.local` after connecting Blob to get that token locally.
+(see `src/components/photo-uploader.tsx`). Create a Blob store under your project's **Storage**
+tab and connect it.
+
+**Note:** connecting a Blob store this way may only expose `BLOB_STORE_ID` (for Vercel's newer
+OIDC-based auth), not a static `BLOB_READ_WRITE_TOKEN`. The `@vercel/blob` SDK version pinned
+here falls back to OIDC only if `VERCEL_OIDC_TOKEN` is also present, which requires OIDC
+Federation to be enabled for the project — if that's not set up, uploads fail with "No read-write
+token found." The reliable fix: find the store's classic/static read-write token (not just the
+`.env.local` quickstart tab) and add it yourself as `BLOB_READ_WRITE_TOKEN` under **Settings →
+Environment Variables** (all three environments), then redeploy.
+
+For local dev, add the same token to your `.env` as `BLOB_READ_WRITE_TOKEN`.
 
 ## Deploying (e.g. to Vercel)
 
