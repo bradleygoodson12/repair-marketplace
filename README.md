@@ -68,19 +68,25 @@ Copy the printed webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
 
 ### Photo uploads (Vercel Blob)
 
-Job-request photos upload directly from the browser to Vercel Blob storage via `/api/upload`
-(see `src/components/photo-uploader.tsx`). Create a Blob store under your project's **Storage**
-tab and connect it.
+Job-request photos upload through `/api/upload`, which receives the file as `multipart/form-data`
+and calls `put()` from `@vercel/blob` server-side (see `src/app/api/upload/route.ts`), passing
+`token: process.env.BLOB_READ_WRITE_TOKEN` explicitly. Files are capped at 4MB to stay under
+Vercel's serverless function request-body limit.
 
-**Note:** connecting a Blob store this way may only expose `BLOB_STORE_ID` (for Vercel's newer
-OIDC-based auth), not a static `BLOB_READ_WRITE_TOKEN`. The `@vercel/blob` SDK version pinned
-here falls back to OIDC only if `VERCEL_OIDC_TOKEN` is also present, which requires OIDC
-Federation to be enabled for the project — if that's not set up, uploads fail with "No read-write
-token found." The reliable fix: find the store's classic/static read-write token (not just the
-`.env.local` quickstart tab) and add it yourself as `BLOB_READ_WRITE_TOKEN` under **Settings →
-Environment Variables** (all three environments), then redeploy.
+This deliberately avoids `@vercel/blob/client`'s browser-direct-upload flow (where the browser
+PUTs straight to Vercel's blob endpoint using a short-lived signed token). That flow depends on
+whichever auth method the SDK resolves at the time — OIDC (via `BLOB_STORE_ID` +
+`VERCEL_OIDC_TOKEN`) takes priority over a static `BLOB_READ_WRITE_TOKEN` whenever both are
+present, and a mismatch there surfaces in the browser as a CORS error on a PUT to
+`vercel.com/api/blob`, which is really a masked 400 (invalid/wrong-scoped token) — very hard to
+root-cause from the client side. Uploading through our own server sidesteps that ambiguity
+entirely: it uses exactly the token we pass, and any failure comes back as a normal JSON error.
 
-For local dev, add the same token to your `.env` as `BLOB_READ_WRITE_TOKEN`.
+Create a Blob store under your project's **Storage** tab, connect it, then add its read-write
+token yourself as `BLOB_READ_WRITE_TOKEN` under **Settings → Environment Variables** (all three
+environments) — don't rely on whatever the store's own "Connect" flow injects automatically, since
+that may only set `BLOB_STORE_ID`. Redeploy after adding it. For local dev, add the same token to
+your `.env` as `BLOB_READ_WRITE_TOKEN`.
 
 ### Repair-document upload (Claude API)
 
@@ -88,8 +94,8 @@ At `/request/upload`, a customer (e.g. a real estate agent acting on a buyer/sel
 upload a single-property inspection report or repair addendum as a PDF instead of filling out the
 one-job form. The flow:
 
-1. `DocumentUploader` uploads the PDF to Vercel Blob (same mechanism as photos, under a
-   `repair-docs/` prefix so `/api/upload` can allow `application/pdf` only for those).
+1. `DocumentUploader` uploads the PDF through `/api/upload` (same server-side mechanism as
+   photos; PDFs land under a `repair-docs/` prefix and photos under `photos/`).
 2. `POST /api/repair-documents` creates a `RepairDocument` row and calls
    `extractRepairItemsFromPdf` (`src/lib/anthropic.ts`), which sends the PDF's public URL straight
    to Claude via a `document` content block (no server-side text extraction needed) and forces

@@ -1,6 +1,5 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
 import { useState } from 'react';
 
 interface DocumentUploaderProps {
@@ -22,12 +21,13 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
     setError(null);
     setUploading(true);
     try {
-      const blob = await upload(`repair-docs/${file.name}`, file, {
-        access: 'public',
-        handleUploadUrl: '/api/upload',
-      });
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not upload document.');
       setFilename(file.name);
-      onUploaded({ url: blob.url, filename: file.name });
+      onUploaded({ url: data.url, filename: file.name });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not upload document.');
     } finally {
@@ -46,7 +46,7 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
         ) : (
           <>
             <span className="text-sm font-medium text-gray-700">Click to upload a PDF</span>
-            <span className="text-xs text-gray-400">Inspection report or repair addendum, up to 20MB</span>
+            <span className="text-xs text-gray-400">Inspection report or repair addendum, up to 4MB</span>
           </>
         )}
         <input

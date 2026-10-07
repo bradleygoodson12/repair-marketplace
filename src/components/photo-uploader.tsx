@@ -1,6 +1,5 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
 import { useState } from 'react';
 
 interface PhotoUploaderProps {
@@ -28,14 +27,16 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
     setUploading(true);
     try {
       const uploaded = await Promise.all(
-        toUpload.map((file) =>
-          upload(file.name, file, {
-            access: 'public',
-            handleUploadUrl: '/api/upload',
-          }),
-        ),
+        toUpload.map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await fetch('/api/upload', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Could not upload photo.');
+          return data.url as string;
+        }),
       );
-      onChange([...value, ...uploaded.map((blob) => blob.url)]);
+      onChange([...value, ...uploaded]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not upload photo.');
     } finally {
@@ -75,7 +76,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
         )}
       </div>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      <p className="mt-2 text-xs text-gray-400">Up to {MAX_PHOTOS} photos, 8MB each.</p>
+      <p className="mt-2 text-xs text-gray-400">Up to {MAX_PHOTOS} photos, 4MB each.</p>
     </div>
   );
 }
