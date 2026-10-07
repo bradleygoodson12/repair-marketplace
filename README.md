@@ -10,8 +10,9 @@ send quotes, and bookings are paid for securely on-platform.
 - **NextAuth** (credentials-based auth, JWT sessions)
 - **Tailwind CSS** for styling
 - **Stripe Checkout** for payments
-- **Vercel Blob** for job-photo uploads
+- **Vercel Blob** for job-photo and repair-document uploads
 - **`zipcodes`** (bundled US zip centroid data, no external API) for zip-radius pro matching
+- **Claude API** (`claude-sonnet-5`) for parsing uploaded repair-list PDFs into line items
 
 ## Core flow
 
@@ -80,6 +81,31 @@ token found." The reliable fix: find the store's classic/static read-write token
 Environment Variables** (all three environments), then redeploy.
 
 For local dev, add the same token to your `.env` as `BLOB_READ_WRITE_TOKEN`.
+
+### Repair-document upload (Claude API)
+
+At `/request/upload`, a customer (e.g. a real estate agent acting on a buyer/seller's behalf) can
+upload a single-property inspection report or repair addendum as a PDF instead of filling out the
+one-job form. The flow:
+
+1. `DocumentUploader` uploads the PDF to Vercel Blob (same mechanism as photos, under a
+   `repair-docs/` prefix so `/api/upload` can allow `application/pdf` only for those).
+2. `POST /api/repair-documents` creates a `RepairDocument` row and calls
+   `extractRepairItemsFromPdf` (`src/lib/anthropic.ts`), which sends the PDF's public URL straight
+   to Claude via a `document` content block (no server-side text extraction needed) and forces
+   structured output via tool-use: one `RepairLineItem` per distinct repair, each tagged with the
+   best-matching category slug from the live category list, plus the property address if the
+   document states one.
+3. `/request/upload/[id]` shows an editable review screen — property address (prefilled if
+   extracted), and each line item with its title/description/category and an include/exclude
+   checkbox.
+4. `POST /api/repair-documents/[id]/submit` creates one `Property` and one `ServiceRequest` per
+   selected item, so each repair flows through the exact same quoting/messaging/payment pipeline
+   as a manually-posted job, just pre-sorted by category.
+
+Requires `ANTHROPIC_API_KEY` (from console.anthropic.com — usage-based billing, no fixed fee).
+Without it, document uploads will fail at the analysis step; everything else in the app is
+unaffected.
 
 ## Deploying (e.g. to Vercel)
 

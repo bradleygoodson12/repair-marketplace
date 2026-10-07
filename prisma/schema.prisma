@@ -44,6 +44,13 @@ enum PaymentStatus {
   FAILED
 }
 
+enum DocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+  SUBMITTED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -64,6 +71,7 @@ model User {
   requests      ServiceRequest[] @relation("CustomerRequests")
   sentMessages  Message[]
   reviewsWritten Review[]        @relation("ReviewsWritten")
+  repairDocuments RepairDocument[]
 
   @@index([email])
 }
@@ -130,6 +138,8 @@ model Category {
 
   proProfiles ProProfileCategory[]
   requests    ServiceRequest[]
+  suggestedForLineItems RepairLineItem[] @relation("SuggestedFor")
+  chosenForLineItems    RepairLineItem[] @relation("ChosenFor")
 }
 
 model ProProfileCategory {
@@ -194,6 +204,7 @@ model ServiceRequest {
   quotes   Quote[]
   booking  Booking?
   messages Message[]
+  repairLineItem RepairLineItem?
 
   @@index([customerId])
   @@index([categoryId])
@@ -263,4 +274,46 @@ model Review {
   customer   User       @relation("ReviewsWritten", fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([proProfileId])
+}
+
+// An uploaded repair-list document (inspection report, repair addendum, etc.)
+// that an AI pass breaks into individual RepairLineItems. Each selected item
+// becomes its own ServiceRequest once the customer reviews and submits.
+model RepairDocument {
+  id               String         @id @default(cuid())
+  customerId       String
+  fileUrl          String
+  originalFilename String
+  status           DocumentStatus @default(PROCESSING)
+  errorMessage     String?
+  extractedAddressLine1 String?
+  extractedCity         String?
+  extractedState        String?
+  extractedZip          String?
+  createdAt        DateTime       @default(now())
+
+  customer  User             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  lineItems RepairLineItem[]
+
+  @@index([customerId])
+}
+
+model RepairLineItem {
+  id               String   @id @default(cuid())
+  repairDocumentId String
+  rawText          String   @db.Text
+  title            String
+  description      String   @db.Text
+  suggestedCategoryId String?
+  categoryId       String?
+  selected         Boolean  @default(true)
+  serviceRequestId String?  @unique
+  createdAt        DateTime @default(now())
+
+  repairDocument    RepairDocument  @relation(fields: [repairDocumentId], references: [id], onDelete: Cascade)
+  suggestedCategory Category?       @relation("SuggestedFor", fields: [suggestedCategoryId], references: [id])
+  category          Category?       @relation("ChosenFor", fields: [categoryId], references: [id])
+  serviceRequest    ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
+
+  @@index([repairDocumentId])
 }

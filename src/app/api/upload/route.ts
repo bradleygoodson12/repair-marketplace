@@ -16,11 +16,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-        maximumSizeInBytes: 8 * 1024 * 1024,
-        addRandomSuffix: true,
-      }),
+      onBeforeGenerateToken: async (pathname) => {
+        const isRepairDocument = pathname.startsWith('repair-docs/');
+        return {
+          allowedContentTypes: isRepairDocument
+            ? ['application/pdf']
+            : ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+          maximumSizeInBytes: isRepairDocument ? 20 * 1024 * 1024 : 8 * 1024 * 1024,
+          addRandomSuffix: true,
+        };
+      },
       onUploadCompleted: async () => {
         // No DB write needed here — the uploaded URL is attached to the
         // request when the customer submits the job-posting form.

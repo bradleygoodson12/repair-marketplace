@@ -24,9 +24,14 @@ export default async function CustomerDashboardPage() {
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Your requests</h1>
-        <Link href="/request/new">
-          <Button>Post a new job</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/request/upload">
+            <Button variant="outline">Upload a repair list</Button>
+          </Link>
+          <Link href="/request/new">
+            <Button>Post a new job</Button>
+          </Link>
+        </div>
       </div>
 
       {requests.length === 0 ? (
