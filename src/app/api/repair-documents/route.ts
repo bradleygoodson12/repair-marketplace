@@ -6,6 +6,11 @@ import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
 import { prisma } from '@/lib/prisma';
 
+// Claude can take well past Vercel's default function timeout to read and
+// analyze a multi-page PDF; without this the function gets killed mid-call
+// and the client request just hangs instead of getting a clean error.
+export const maxDuration = 60;
+
 const schema = z.object({
   fileUrl: z.string().url(),
   filename: z.string().min(1),

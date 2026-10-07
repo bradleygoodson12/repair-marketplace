@@ -18,21 +18,31 @@ export default function UploadRepairDocumentPage() {
     setAnalyzing(true);
     setError(null);
 
-    const res = await fetch('/api/repair-documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileUrl: file.url, filename: file.filename }),
-    });
+    try {
+      const res = await fetch('/api/repair-documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileUrl: file.url, filename: file.filename }),
+        signal: AbortSignal.timeout(65_000),
+      });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(typeof data.error === 'string' ? data.error : 'Could not analyze that document.');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(typeof data.error === 'string' ? data.error : 'Could not analyze that document.');
+        setAnalyzing(false);
+        return;
+      }
+
+      const data = await res.json();
+      router.push(`/request/upload/${data.id}`);
+    } catch (e) {
+      setError(
+        e instanceof Error && e.name === 'TimeoutError'
+          ? 'That took too long to analyze. Try a shorter document, or try again.'
+          : 'Could not reach the server. Check your connection and try again.',
+      );
       setAnalyzing(false);
-      return;
     }
-
-    const data = await res.json();
-    router.push(`/request/upload/${data.id}`);
   }
 
   return (
