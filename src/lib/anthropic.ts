@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
 
 export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || 'placeholder',
@@ -6,20 +7,23 @@ export const anthropic = new Anthropic({
 
 export const REPAIR_EXTRACTION_MODEL = 'claude-sonnet-5';
 
-export interface ExtractedRepairItem {
-  title: string;
-  description: string;
-  categorySlug: string;
-  pageNumber: number;
-}
+const extractedRepairItemSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  categorySlug: z.string(),
+  pageNumber: z.number().int(),
+});
 
-export interface ExtractedRepairDocument {
-  items: ExtractedRepairItem[];
-  propertyAddressLine1?: string;
-  propertyCity?: string;
-  propertyState?: string;
-  propertyZip?: string;
-}
+const extractedRepairDocumentSchema = z.object({
+  items: z.array(extractedRepairItemSchema).default([]),
+  propertyAddressLine1: z.string().optional(),
+  propertyCity: z.string().optional(),
+  propertyState: z.string().optional(),
+  propertyZip: z.string().optional(),
+});
+
+export type ExtractedRepairItem = z.infer<typeof extractedRepairItemSchema>;
+export type ExtractedRepairDocument = z.infer<typeof extractedRepairDocumentSchema>;
 
 /**
  * Sends a PDF (by its public URL) to Claude and asks it to break the document
@@ -35,7 +39,7 @@ export async function extractRepairItemsFromPdf(
 
   const message = await anthropic.messages.create({
     model: REPAIR_EXTRACTION_MODEL,
-    max_tokens: 4096,
+    max_tokens: 16000,
     tools: [
       {
         name: 'extract_repair_items',
@@ -100,10 +104,19 @@ If the document clearly states a property address, include it; otherwise omit th
     ],
   });
 
+  if (message.stop_reason === 'max_tokens') {
+    throw new Error('That document has too many items to analyze in one pass — try splitting it up.');
+  }
+
   const toolUseBlock = message.content.find((block) => block.type === 'tool_use');
   if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
     throw new Error('Claude did not return structured repair items.');
   }
 
-  return toolUseBlock.input as ExtractedRepairDocument;
+  const parsed = extractedRepairDocumentSchema.safeParse(toolUseBlock.input);
+  if (!parsed.success) {
+    throw new Error("Claude's response didn't match the expected format — please try again.");
+  }
+
+  return parsed.data;
 }
