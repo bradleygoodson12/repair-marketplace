@@ -12,6 +12,22 @@ const CATEGORIES = [
   { name: 'Roofing', slug: 'roofing', icon: '🏠', description: 'Leak repair, shingle replacement, inspections' },
   { name: 'Painting', slug: 'painting', icon: '🎨', description: 'Interior & exterior painting' },
   { name: 'Flooring', slug: 'flooring', icon: '🧱', description: 'Repair & install hardwood, tile, carpet' },
+  { name: 'Carpentry', slug: 'carpentry', icon: '🪵', description: 'Trim, framing, custom woodwork & repairs' },
+  { name: 'Drywall Repair', slug: 'drywall-repair', icon: '🧰', description: 'Holes, cracks, patching & texture matching' },
+  { name: 'Garage Door Repair', slug: 'garage-door-repair', icon: '🚪', description: 'Openers, springs, tracks & panel repair' },
+  { name: 'Fencing', slug: 'fencing', icon: '🚧', description: 'Repair, install & replace fences and gates' },
+  { name: 'Gutter Cleaning & Repair', slug: 'gutter-repair', icon: '🍂', description: 'Cleaning, resealing, downspouts & guards' },
+  { name: 'Deck & Patio Repair', slug: 'deck-patio-repair', icon: '🪑', description: 'Board replacement, staining, railings' },
+  { name: 'Window Repair & Installation', slug: 'window-repair', icon: '🪟', description: 'Glass, seals, screens, frames & new installs' },
+  { name: 'Door & Lock Repair', slug: 'door-lock-repair', icon: '🔐', description: 'Interior/exterior doors, hardware, locksmith work' },
+  { name: 'Masonry & Concrete', slug: 'masonry-concrete', icon: '🪨', description: 'Driveways, walkways, brick & stone repair' },
+  { name: 'Pest Control', slug: 'pest-control', icon: '🐜', description: 'Inspections, treatment & prevention' },
+  { name: 'Siding Repair', slug: 'siding-repair', icon: '🏚️', description: 'Patch, replace & reseal exterior siding' },
+  { name: 'Tile & Grout', slug: 'tile-grout', icon: '🔲', description: 'Regrouting, recaulking & tile replacement' },
+  { name: 'Cabinet Repair & Refacing', slug: 'cabinet-repair', icon: '🗄️', description: 'Hinges, drawers, refacing & resurfacing' },
+  { name: 'Water Heater Repair', slug: 'water-heater-repair', icon: '🔥', description: 'Repair, flush & replace tank & tankless units' },
+  { name: 'Septic & Sewer', slug: 'septic-sewer', icon: '🚽', description: 'Line clearing, inspections & septic service' },
+  { name: 'Pool & Spa Repair', slug: 'pool-spa-repair', icon: '🏊', description: 'Pumps, filters, leaks & equipment repair' },
 ];
 
 async function main() {
