@@ -286,6 +286,7 @@ model RepairDocument {
   originalFilename String
   status           DocumentStatus @default(PROCESSING)
   errorMessage     String?
+  photoRenderError String?
   extractedAddressLine1 String?
   extractedCity         String?
   extractedState        String?

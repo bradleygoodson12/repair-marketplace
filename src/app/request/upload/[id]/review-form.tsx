@@ -19,6 +19,7 @@ interface DocumentProp {
   extractedCity: string | null;
   extractedState: string | null;
   extractedZip: string | null;
+  photoRenderError: string | null;
   lineItems: RepairLineItem[];
 }
 
@@ -115,6 +116,11 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
 
   return (
     <div className="flex flex-col gap-6">
+      {document.photoRenderError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Photos couldn&apos;t be attached from this document: {document.photoRenderError}
+        </div>
+      )}
       <Card>
         <CardContent>
           <h2 className="mb-3 font-semibold text-gray-900">Property address</h2>

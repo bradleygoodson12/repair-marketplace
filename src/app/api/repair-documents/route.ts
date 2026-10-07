@@ -49,14 +49,24 @@ export async function POST(req: Request) {
     }
 
     // Best-effort: render the page each item came from and attach it as a
-    // photo. A rendering failure here shouldn't fail the whole upload —
-    // the extracted items are still useful without page images.
+    // photo. A rendering failure here shouldn't fail the whole upload — the
+    // extracted items are still useful without page images — but the
+    // failure reason is recorded so it's visible on the review page instead
+    // of silently vanishing.
     const pageImageUrls = new Map<number, string>();
+    let photoRenderError: string | null = null;
     try {
       const pdfResponse = await fetch(fileUrl);
+      if (!pdfResponse.ok) {
+        throw new Error(`Fetching the uploaded PDF failed: HTTP ${pdfResponse.status}`);
+      }
       const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
       const pageNumbers = extracted.items.map((item) => item.pageNumber);
       const rendered = await renderPdfPages(pdfBytes, pageNumbers);
+
+      if (rendered.size === 0) {
+        throw new Error(`renderPdfPages returned no pages for page numbers [${pageNumbers.join(', ')}]`);
+      }
 
       for (const [pageNumber, pngBuffer] of rendered) {
         const blob = await put(`repair-docs/page-${pageNumber}.png`, pngBuffer, {
@@ -67,8 +77,9 @@ export async function POST(req: Request) {
         });
         pageImageUrls.set(pageNumber, blob.url);
       }
-    } catch {
-      // Leave pageImageUrls empty; items are created without photos below.
+    } catch (error) {
+      photoRenderError =
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     }
 
     await prisma.$transaction([
@@ -76,6 +87,7 @@ export async function POST(req: Request) {
         where: { id: document.id },
         data: {
           status: 'READY',
+          photoRenderError,
           extractedAddressLine1: extracted.propertyAddressLine1 ?? null,
           extractedCity: extracted.propertyCity ?? null,
           extractedState: extracted.propertyState ?? null,
