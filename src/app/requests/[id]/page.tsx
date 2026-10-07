@@ -61,6 +61,19 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">
           <p className="text-gray-700">{request.description}</p>
+          {request.photoUrls.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {request.photoUrls.map((url) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={url}
+                  src={url}
+                  alt="Job photo"
+                  className="h-24 w-24 rounded-lg border border-gray-200 object-cover"
+                />
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             {(request.budgetMinCents || request.budgetMaxCents) && (
               <span>

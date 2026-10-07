@@ -4,9 +4,17 @@ import Link from 'next/link';
 import { ProCard } from '@/components/pro-card';
 import { Button } from '@/components/ui/button';
 import { prisma } from '@/lib/prisma';
+import { isValidZip, zipDistanceMiles } from '@/lib/zip';
 
-export default async function CategoryDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CategoryDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ zip?: string }>;
+}) {
   const { slug } = await params;
+  const { zip } = await searchParams;
   const category = await prisma.category.findUnique({ where: { slug } });
   if (!category) notFound();
 
@@ -15,7 +23,35 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
     include: { proProfile: true },
   });
 
-  const pros = proCategories.map((pc) => pc.proProfile).sort((a, b) => b.avgRating - a.avgRating);
+  const allPros = proCategories.map((pc) => pc.proProfile);
+
+  let pros = allPros;
+  let zipNotice: string | null = null;
+
+  if (zip) {
+    if (!isValidZip(zip)) {
+      zipNotice = `We don't recognize the zip code "${zip}" — showing all pros in this category.`;
+      pros = [...allPros].sort((a, b) => b.avgRating - a.avgRating);
+    } else {
+      const withDistance = allPros
+        .map((pro) => ({ pro, distance: zipDistanceMiles(zip, pro.serviceZip) }))
+        .filter((p): p is { pro: (typeof allPros)[number]; distance: number } => p.distance !== null);
+
+      const nearby = withDistance
+        .filter(({ distance, pro }) => distance <= pro.serviceRadiusMiles)
+        .sort((a, b) => a.distance - b.distance);
+
+      if (nearby.length > 0) {
+        pros = nearby.map(({ pro }) => pro);
+        zipNotice = `Showing pros who service ${zip}, nearest first.`;
+      } else {
+        zipNotice = `No pros currently service ${zip} for this category — showing all pros instead.`;
+        pros = [...allPros].sort((a, b) => b.avgRating - a.avgRating);
+      }
+    }
+  } else {
+    pros = [...allPros].sort((a, b) => b.avgRating - a.avgRating);
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -30,6 +66,8 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
           <Button size="lg">Post a job in this category</Button>
         </Link>
       </div>
+
+      {zipNotice && <p className="mb-4 text-sm text-gray-500">{zipNotice}</p>}
 
       {pros.length === 0 ? (
         <p className="text-gray-500">No pros listed for this category yet.</p>

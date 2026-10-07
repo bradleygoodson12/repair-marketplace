@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
 import { formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
+import { zipDistanceMiles } from '@/lib/zip';
 
 import { ProProfileForm } from './profile-form';
 
@@ -38,15 +39,23 @@ export default async function ProDashboardPage() {
   }
 
   const categoryIds = proProfile.categories.map((c) => c.categoryId);
-  const leads = await prisma.serviceRequest.findMany({
+  const candidateLeads = await prisma.serviceRequest.findMany({
     where: {
       categoryId: { in: categoryIds },
       status: { in: ['OPEN', 'QUOTED'] },
     },
     include: { category: true, property: true },
     orderBy: { createdAt: 'desc' },
-    take: 20,
+    take: 50,
   });
+
+  // Keep leads within the pro's service radius; if a zip can't be matched
+  // (bad data), don't hide it — just leave distance unknown.
+  const leads = candidateLeads
+    .map((r) => ({ request: r, distance: zipDistanceMiles(proProfile.serviceZip, r.property.zip) }))
+    .filter(({ distance }) => distance === null || distance <= proProfile.serviceRadiusMiles)
+    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
+    .slice(0, 20);
 
   const quotedRequestIds = new Set(proProfile.quotes.map((q) => q.requestId));
 
@@ -64,12 +73,14 @@ export default async function ProDashboardPage() {
         </Link>
       </div>
 
-      <h2 className="mb-4 text-lg font-bold text-gray-900">Job leads in your categories</h2>
+      <h2 className="mb-4 text-lg font-bold text-gray-900">
+        Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
+      </h2>
       {leads.length === 0 ? (
-        <p className="mb-8 text-gray-500">No open leads right now — check back soon.</p>
+        <p className="mb-8 text-gray-500">No open leads in your service area right now — check back soon.</p>
       ) : (
         <div className="mb-8 flex flex-col gap-3">
-          {leads.map((r) => (
+          {leads.map(({ request: r, distance }) => (
             <Link key={r.id} href={`/requests/${r.id}`}>
               <Card className="transition-shadow hover:shadow-md">
                 <CardContent className="flex items-center justify-between">
@@ -86,6 +97,7 @@ export default async function ProDashboardPage() {
                     <p className="font-semibold text-gray-900">{r.title}</p>
                     <p className="text-sm text-gray-500">
                       {r.property.city}, {r.property.state} {r.property.zip}
+                      {distance !== null && ` · ${distance.toFixed(1)} mi away`}
                     </p>
                   </div>
                   {(r.budgetMinCents || r.budgetMaxCents) && (

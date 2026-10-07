@@ -10,6 +10,8 @@ send quotes, and bookings are paid for securely on-platform.
 - **NextAuth** (credentials-based auth, JWT sessions)
 - **Tailwind CSS** for styling
 - **Stripe Checkout** for payments
+- **Vercel Blob** for job-photo uploads
+- **`zipcodes`** (bundled US zip centroid data, no external API) for zip-radius pro matching
 
 ## Core flow
 
@@ -50,6 +52,14 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 Copy the printed webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+### Photo uploads (Vercel Blob)
+
+Job-request photos upload directly from the browser to Vercel Blob storage via `/api/upload`
+(see `src/components/photo-uploader.tsx`). On Vercel, go to your project's **Storage** tab →
+**Create Database** → **Blob**, and connect it to the project — this automatically adds a
+`BLOB_READ_WRITE_TOKEN` environment variable, no manual copying needed. For local dev, run
+`vercel env pull .env.local` after connecting Blob to get that token locally.
 
 ## Deploying (e.g. to Vercel)
 

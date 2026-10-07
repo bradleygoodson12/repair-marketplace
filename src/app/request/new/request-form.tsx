@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input, Select, Textarea } from '@/components/ui/input';
+import { PhotoUploader } from '@/components/photo-uploader';
 
 interface CategoryOption {
   id: string;
@@ -28,6 +29,7 @@ export function RequestForm({ categories }: { categories: CategoryOption[] }) {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,6 +48,7 @@ export function RequestForm({ categories }: { categories: CategoryOption[] }) {
         budgetMinCents: budgetMin ? Math.round(parseFloat(budgetMin) * 100) : null,
         budgetMaxCents: budgetMax ? Math.round(parseFloat(budgetMax) * 100) : null,
         preferredDate: preferredDate || null,
+        photoUrls,
         property: { addressLine1, city, state, zip },
       }),
     });
@@ -92,6 +95,10 @@ export function RequestForm({ categories }: { categories: CategoryOption[] }) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Photos (optional)</label>
+        <PhotoUploader value={photoUrls} onChange={setPhotoUrls} />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>

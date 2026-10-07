@@ -12,6 +12,7 @@ const schema = z.object({
   budgetMinCents: z.number().int().nonnegative().nullable().optional(),
   budgetMaxCents: z.number().int().nonnegative().nullable().optional(),
   preferredDate: z.string().nullable().optional(),
+  photoUrls: z.array(z.string().url()).max(5).optional(),
   property: z.object({
     addressLine1: z.string().min(1),
     addressLine2: z.string().optional(),
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { categoryId, title, description, budgetMinCents, budgetMaxCents, preferredDate, property } =
+  const { categoryId, title, description, budgetMinCents, budgetMaxCents, preferredDate, photoUrls, property } =
     parsed.data;
 
   const createdProperty = await prisma.property.create({
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
       budgetMinCents: budgetMinCents ?? null,
       budgetMaxCents: budgetMaxCents ?? null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,
+      photoUrls: photoUrls ?? [],
     },
   });
 

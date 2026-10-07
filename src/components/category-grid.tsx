@@ -8,11 +8,20 @@ interface CategoryLite {
   icon: string;
 }
 
-export function CategoryGrid({ categories }: { categories: CategoryLite[] }) {
+export function CategoryGrid({
+  categories,
+  zip,
+}: {
+  categories: CategoryLite[];
+  zip?: string;
+}) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
       {categories.map((c) => (
-        <Link key={c.slug} href={`/categories/${c.slug}`}>
+        <Link
+          key={c.slug}
+          href={zip ? `/categories/${c.slug}?zip=${encodeURIComponent(zip)}` : `/categories/${c.slug}`}
+        >
           <Card className="h-full transition-shadow hover:shadow-md">
             <CardContent className="flex flex-col gap-2">
               <span className="text-3xl">{c.icon}</span>
