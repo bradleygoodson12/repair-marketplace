@@ -123,7 +123,25 @@ If the document clearly states a property address, include it; otherwise omit th
 
   const preview = JSON.stringify(toolUseBlock.input).slice(0, 500);
 
-  const parsed = extractedRepairDocumentSchema.safeParse(toolUseBlock.input);
+  // Claude's tool-use occasionally serializes the `items` array as a JSON
+  // string instead of a native array (seen in practice on larger
+  // extractions) -- normalize before validating.
+  let normalizedInput = toolUseBlock.input;
+  if (
+    normalizedInput &&
+    typeof normalizedInput === 'object' &&
+    'items' in normalizedInput &&
+    typeof (normalizedInput as { items: unknown }).items === 'string'
+  ) {
+    try {
+      const parsedItems = JSON.parse((normalizedInput as { items: string }).items);
+      normalizedInput = { ...normalizedInput, items: parsedItems };
+    } catch {
+      // Leave as-is; the zod validation below will produce a clear error.
+    }
+  }
+
+  const parsed = extractedRepairDocumentSchema.safeParse(normalizedInput);
   if (!parsed.success) {
     throw new Error(`Claude's response didn't match the expected format. Raw response: ${preview}`);
   }
