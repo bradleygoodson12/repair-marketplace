@@ -138,10 +138,19 @@ If the document clearly states a property address, include it; otherwise omit th
     try {
       const parsedItems = JSON.parse(itemsString);
       normalizedInput = { ...normalizedInput, items: parsedItems };
-    } catch (e) {
-      itemsParseError = `items was a ${itemsString.length}-char string; JSON.parse failed: ${
-        e instanceof Error ? e.message : String(e)
-      }. Last 300 chars: ${itemsString.slice(-300)}`;
+    } catch (firstError) {
+      // Seen in practice: Claude sometimes "loses" the outer `{"items":`
+      // wrapper partway through generation and keeps writing the rest of
+      // the object (closing bracket, propertyAddressLine1, etc.) as if it
+      // were still inside that string. Prepending the wrapper back on
+      // reconstructs the JSON Claude actually meant to produce.
+      try {
+        normalizedInput = JSON.parse(`{"items":${itemsString}`);
+      } catch {
+        itemsParseError = `items was a ${itemsString.length}-char string; JSON.parse failed: ${
+          firstError instanceof Error ? firstError.message : String(firstError)
+        }. Last 300 chars: ${itemsString.slice(-300)}`;
+      }
     }
   }
 
