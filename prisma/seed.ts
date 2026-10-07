@@ -28,6 +28,14 @@ const CATEGORIES = [
   { name: 'Water Heater Repair', slug: 'water-heater-repair', icon: '🔥', description: 'Repair, flush & replace tank & tankless units' },
   { name: 'Septic & Sewer', slug: 'septic-sewer', icon: '🚽', description: 'Line clearing, inspections & septic service' },
   { name: 'Pool & Spa Repair', slug: 'pool-spa-repair', icon: '🏊', description: 'Pumps, filters, leaks & equipment repair' },
+  { name: 'Foundation Repair', slug: 'foundation-repair', icon: '🏗️', description: 'Cracks, settling, waterproofing & leveling' },
+  { name: 'Crawlspace Repair', slug: 'crawlspace-repair', icon: '🕳️', description: 'Moisture control, encapsulation & structural repair' },
+  { name: 'House Cleaning', slug: 'house-cleaning', icon: '🧹', description: 'Deep cleaning, move-in/move-out & recurring service' },
+  { name: 'Pressure Washing', slug: 'pressure-washing', icon: '💦', description: 'Driveways, siding, decks & exterior surfaces' },
+  { name: 'Insulation', slug: 'insulation', icon: '🏡', description: 'Attic, wall & crawlspace insulation install & repair' },
+  { name: 'Structural Engineering', slug: 'structural-engineering', icon: '📐', description: 'Inspections, load-bearing assessments & permits' },
+  { name: 'Tree Service', slug: 'tree-service', icon: '🌳', description: 'Removal, trimming, stump grinding & storm cleanup' },
+  { name: 'Landscaping & Lawn Care', slug: 'landscaping-lawn-care', icon: '🌿', description: 'Mowing, lawn treatment, mulching & yard cleanup' },
 ];
 
 async function main() {
