@@ -10,10 +10,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-500 text-white hover:bg-brand-600',
-  secondary: 'bg-gray-900 text-white hover:bg-gray-800',
+  primary: 'bg-brand-500 text-gray-950 hover:bg-brand-400 shadow-sm shadow-brand-500/20',
+  secondary: 'bg-gray-950 text-white hover:bg-gray-800',
   ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
-  outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+  outline: 'border border-gray-300 bg-white text-gray-900 hover:border-gray-900',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+          'inline-flex items-center justify-center rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
           variantClasses[variant],
           sizeClasses[size],
           className,

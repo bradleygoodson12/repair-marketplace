@@ -22,7 +22,7 @@ export function CategoryGrid({
           key={c.slug}
           href={zip ? `/categories/${c.slug}?zip=${encodeURIComponent(zip)}` : `/categories/${c.slug}`}
         >
-          <Card className="h-full transition-shadow hover:shadow-md">
+          <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
             <CardContent className="flex flex-col gap-2">
               <span className="text-3xl">{c.icon}</span>
               <span className="font-semibold text-gray-900">{c.name}</span>

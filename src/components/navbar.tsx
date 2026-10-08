@@ -8,40 +8,51 @@ export function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-xl font-bold text-brand-600">
-          FixIt<span className="text-gray-900">Pro</span>
+    <header className="bg-gray-950">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <Link href="/" className="text-xl font-bold tracking-tight text-white">
+          FixIt<span className="text-brand-400">Pro</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-          <Link href="/categories" className="hover:text-gray-900">Browse services</Link>
-          <Link href="/how-it-works" className="hover:text-gray-900">How it works</Link>
-          <Link href="/pro/signup" className="hover:text-gray-900">Become a pro</Link>
+        <nav className="hidden items-center gap-8 text-sm font-medium text-gray-300 md:flex">
+          <Link href="/categories" className="transition-colors hover:text-white">
+            Browse services
+          </Link>
+          <Link href="/how-it-works" className="transition-colors hover:text-white">
+            How it works
+          </Link>
+          <Link href="/pro/signup" className="transition-colors hover:text-white">
+            Become a pro
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
           {session ? (
             <>
               {session.user.role === 'ADMIN' ? (
-                <Link href="/admin" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                <Link href="/admin" className="text-sm font-medium text-gray-300 hover:text-white">
                   Admin
                 </Link>
               ) : (
                 <Link
                   href={session.user.role === 'PRO' ? '/dashboard/pro' : '/dashboard/customer'}
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="text-sm font-medium text-gray-300 hover:text-white"
                 >
                   Dashboard
                 </Link>
               )}
-              <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="border-gray-700 bg-transparent text-white hover:border-gray-500 hover:bg-gray-900"
+              >
                 Sign out
               </Button>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+              <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white">
                 Log in
               </Link>
               <Link href="/signup">
