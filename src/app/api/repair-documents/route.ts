@@ -1,11 +1,9 @@
-import { put } from '@vercel/blob';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
-import { renderPdfPages } from '@/lib/pdf-render';
 import { prisma } from '@/lib/prisma';
 
 // Claude can take well past Vercel's default function timeout to read and
@@ -16,6 +14,7 @@ export const maxDuration = 60;
 const schema = z.object({
   fileUrl: z.string().url(),
   filename: z.string().min(1),
+  supportingDocumentUrls: z.array(z.string().url()).default([]),
 });
 
 export async function POST(req: Request) {
@@ -26,13 +25,14 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { fileUrl, filename } = parsed.data;
+  const { fileUrl, filename, supportingDocumentUrls } = parsed.data;
 
   const document = await prisma.repairDocument.create({
     data: {
       customerId: session.user.id,
       fileUrl,
       originalFilename: filename,
+      supportingDocumentUrls,
       status: 'PROCESSING',
     },
   });
@@ -48,46 +48,11 @@ export async function POST(req: Request) {
       throw new Error("We couldn't find any repair items in that document.");
     }
 
-    // Best-effort: render the page each item came from and attach it as a
-    // photo. A rendering failure here shouldn't fail the whole upload — the
-    // extracted items are still useful without page images — but the
-    // failure reason is recorded so it's visible on the review page instead
-    // of silently vanishing.
-    const pageImageUrls = new Map<number, string>();
-    let photoRenderError: string | null = null;
-    try {
-      const pdfResponse = await fetch(fileUrl);
-      if (!pdfResponse.ok) {
-        throw new Error(`Fetching the uploaded PDF failed: HTTP ${pdfResponse.status}`);
-      }
-      const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
-      const pageNumbers = extracted.items.map((item) => item.pageNumber);
-      const rendered = await renderPdfPages(pdfBytes, pageNumbers);
-
-      if (rendered.size === 0) {
-        throw new Error(`renderPdfPages returned no pages for page numbers [${pageNumbers.join(', ')}]`);
-      }
-
-      for (const [pageNumber, pngBuffer] of rendered) {
-        const blob = await put(`repair-docs/page-${pageNumber}.png`, pngBuffer, {
-          access: 'public',
-          addRandomSuffix: true,
-          contentType: 'image/png',
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
-        pageImageUrls.set(pageNumber, blob.url);
-      }
-    } catch (error) {
-      photoRenderError =
-        error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    }
-
     await prisma.$transaction([
       prisma.repairDocument.update({
         where: { id: document.id },
         data: {
           status: 'READY',
-          photoRenderError,
           extractedAddressLine1: extracted.propertyAddressLine1 ?? null,
           extractedCity: extracted.propertyCity ?? null,
           extractedState: extracted.propertyState ?? null,
@@ -105,7 +70,6 @@ export async function POST(req: Request) {
             suggestedCategoryId: matched?.id ?? null,
             categoryId: matched?.id ?? null,
             pageNumber: item.pageNumber,
-            pageImageUrl: pageImageUrls.get(item.pageNumber) ?? null,
           };
         }),
       }),

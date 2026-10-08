@@ -4,9 +4,11 @@ import type { RepairLineItem } from '@prisma/client';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { AttachmentThumb } from '@/components/attachment-thumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Select, Textarea } from '@/components/ui/input';
+import { MultiFileUploader } from '@/components/multi-file-uploader';
 
 interface CategoryOption {
   id: string;
@@ -15,16 +17,15 @@ interface CategoryOption {
 
 interface DocumentProp {
   id: string;
+  fileUrl: string;
+  originalFilename: string;
+  supportingDocumentUrls: string[];
   extractedAddressLine1: string | null;
   extractedCity: string | null;
   extractedState: string | null;
   extractedZip: string | null;
-  photoRenderError: string | null;
   lineItems: RepairLineItem[];
 }
-
-const pageImageById = (document: DocumentProp, id: string) =>
-  document.lineItems.find((i) => i.id === id)?.pageImageUrl ?? null;
 
 interface ItemState {
   id: string;
@@ -48,6 +49,7 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
       selected: item.selected,
     })),
   );
+  const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>(document.supportingDocumentUrls);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; title: string }[] | null>(null);
@@ -76,6 +78,7 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
       body: JSON.stringify({
         property: { addressLine1, city, state, zip },
         items: selectedItems.map((i) => ({ id: i.id, title: i.title, description: i.description, categoryId: i.categoryId })),
+        supportingDocumentUrls,
       }),
     });
 
@@ -116,11 +119,6 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
 
   return (
     <div className="flex flex-col gap-6">
-      {document.photoRenderError && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Photos couldn&apos;t be attached from this document: {document.photoRenderError}
-        </div>
-      )}
       <Card>
         <CardContent>
           <h2 className="mb-3 font-semibold text-gray-900">Property address</h2>
@@ -146,14 +144,6 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
                   checked={item.selected}
                   onChange={(e) => updateItem(item.id, { selected: e.target.checked })}
                 />
-                {pageImageById(document, item.id) && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={pageImageById(document, item.id)!}
-                    alt="Document page"
-                    className="h-24 w-20 flex-shrink-0 rounded border border-gray-200 object-cover object-top"
-                  />
-                )}
                 <div className="flex-1">
                   <Input
                     className="mb-2 font-medium"
@@ -180,6 +170,19 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardContent>
+          <h2 className="mb-1 font-semibold text-gray-900">4. Upload report & pictures</h2>
+          <p className="mb-3 text-sm text-gray-500">
+            These are attached in full to every request below, so pros can review the source themselves.
+          </p>
+          <div className="mb-3 flex flex-wrap gap-3">
+            <AttachmentThumb url={document.fileUrl} />
+          </div>
+          <MultiFileUploader value={supportingDocumentUrls} onChange={setSupportingDocumentUrls} />
+        </CardContent>
+      </Card>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button size="lg" disabled={loading} onClick={handleSubmit} className="w-fit">

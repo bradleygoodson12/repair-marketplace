@@ -22,6 +22,7 @@ const schema = z.object({
       }),
     )
     .min(1),
+  supportingDocumentUrls: z.array(z.string().url()).default([]),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,23 +43,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { property, items } = parsed.data;
+  const { property, items, supportingDocumentUrls } = parsed.data;
 
   const validLineItemIds = new Set(document.lineItems.map((li) => li.id));
   if (items.some((i) => !validLineItemIds.has(i.id))) {
     return NextResponse.json({ error: 'One or more items do not belong to this document.' }, { status: 400 });
   }
 
+  // Every request gets the full source material — the analyzed list plus
+  // whatever else was attached — so pros can review it directly instead of
+  // relying on an AI-cropped page image per item.
+  const attachmentUrls = [...new Set([document.fileUrl, ...supportingDocumentUrls])];
+
   const createdProperty = await prisma.property.create({
     data: { ownerId: session.user.id, ...property },
   });
 
-  const lineItemById = new Map(document.lineItems.map((li) => [li.id, li]));
   const created: { id: string; title: string }[] = [];
 
   await prisma.$transaction(async (tx) => {
     for (const item of items) {
-      const pageImageUrl = lineItemById.get(item.id)?.pageImageUrl;
       const request = await tx.serviceRequest.create({
         data: {
           customerId: session.user.id,
@@ -66,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           categoryId: item.categoryId,
           title: item.title,
           description: item.description,
-          photoUrls: pageImageUrl ? [pageImageUrl] : [],
+          photoUrls: attachmentUrls,
         },
       });
       await tx.repairLineItem.update({
@@ -75,7 +79,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
       created.push({ id: request.id, title: request.title });
     }
-    await tx.repairDocument.update({ where: { id: document.id }, data: { status: 'SUBMITTED' } });
+    await tx.repairDocument.update({
+      where: { id: document.id },
+      data: { status: 'SUBMITTED', supportingDocumentUrls },
+    });
   });
 
   return NextResponse.json({ requests: created });

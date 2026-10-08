@@ -115,38 +115,35 @@ your `.env` as `BLOB_READ_WRITE_TOKEN`.
 
 At `/request/upload`, a customer (e.g. a real estate agent acting on a buyer/seller's behalf) can
 upload a single-property inspection report or repair addendum as a PDF instead of filling out the
-one-job form. The flow:
+one-job form. Pros see the original source documents directly rather than an AI-cropped photo per
+item — an earlier version tried to auto-render and match a page image per line item, which proved
+unreliable, so it was replaced with letting the customer attach the real documents in full. The
+flow:
 
-1. `DocumentUploader` uploads the PDF through `/api/upload` (same server-side mechanism as
-   photos; PDFs land under a `repair-docs/` prefix and photos under `photos/`).
-2. `POST /api/repair-documents` creates a `RepairDocument` row and calls
-   `extractRepairItemsFromPdf` (`src/lib/anthropic.ts`), which sends the PDF's public URL straight
-   to Claude via a `document` content block (no server-side text extraction needed) and forces
-   structured output via tool-use: one `RepairLineItem` per distinct repair, each tagged with the
-   best-matching category slug from the live category list and the 1-indexed page it appears on,
+1. `DocumentUploader` uploads the PDF to analyze through `/api/upload` (same server-side mechanism
+   as photos; PDFs land under a `repair-docs/` prefix and photos under `photos/`). Optionally,
+   `MultiFileUploader` uploads any number of additional supporting documents/photos (the full
+   inspection report, addendum, etc.) the same way.
+2. `POST /api/repair-documents` creates a `RepairDocument` row (storing both `fileUrl` and
+   `supportingDocumentUrls`) and calls `extractRepairItemsFromPdf` (`src/lib/anthropic.ts`), which
+   sends the PDF's public URL straight to Claude via a `document` content block (no server-side
+   text extraction needed) and forces structured output via tool-use: one `RepairLineItem` per
+   distinct repair, each tagged with the best-matching category slug from the live category list,
    plus the property address if the document states one.
-3. The route then renders each referenced page to a PNG (`src/lib/pdf-render.ts`, using `unpdf` +
-   the official `pdfjs-dist` Node build + `@napi-rs/canvas`) and uploads it via `put()`, so each
-   line item can carry a real image of its source page — including any embedded inspection photo
-   and the surrounding notes — not just extracted text. A rendering failure is non-fatal; the item
-   is simply created without a photo.
-4. `/request/upload/[id]` shows an editable review screen — property address (prefilled if
-   extracted), and each line item with its rendered page thumbnail, title/description/category,
-   and an include/exclude checkbox.
-5. `POST /api/repair-documents/[id]/submit` creates one `Property` and one `ServiceRequest` per
-   selected item (carrying its page image into `photoUrls`), so each repair flows through the
-   exact same quoting/messaging/payment pipeline as a manually-posted job, just pre-sorted by
-   category and with a photo attached.
+3. `/request/upload/[id]` shows an editable review screen — property address (prefilled if
+   extracted), each line item with title/description/category and an include/exclude checkbox, and
+   a final "upload report & pictures" section where the customer can add more supporting
+   documents/photos before sending.
+4. `POST /api/repair-documents/[id]/submit` creates one `Property` and one `ServiceRequest` per
+   selected item, every one carrying the *same* full attachment set (`fileUrl` +
+   `supportingDocumentUrls`) into `photoUrls`, so each repair flows through the exact same
+   quoting/messaging pipeline as a manually-posted job, with the real source documents attached.
+   `src/components/attachment-thumb.tsx` renders each URL as an image thumbnail or a PDF chip
+   (`src/lib/attachments.ts#isPdfUrl`) wherever `photoUrls` is displayed.
 
 Requires `ANTHROPIC_API_KEY` (from console.anthropic.com — usage-based billing, no fixed fee).
 Without it, document uploads will fail at the analysis step; everything else in the app is
 unaffected.
-
-**Bundler note:** `@napi-rs/canvas` (native addon) and `pdfjs-dist` (resolves its worker script
-relative to its own file at runtime) both break if Turbopack bundles/moves them, so both are
-listed in `next.config.js`'s `serverExternalPackages` to load via plain `require()` instead. If
-page-image rendering ever throws "Cannot find module .../pdf.worker.mjs" or an addon-placement
-error, check that list first.
 
 ## Deploying (e.g. to Vercel)
 

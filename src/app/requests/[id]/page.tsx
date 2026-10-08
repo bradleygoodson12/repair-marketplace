@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
 
+import { AttachmentThumb } from '@/components/attachment-thumb';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,13 +66,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           {request.photoUrls.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {request.photoUrls.map((url) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={url}
-                  src={url}
-                  alt="Job photo"
-                  className="h-24 w-24 rounded-lg border border-gray-200 object-cover"
-                />
+                <AttachmentThumb key={url} url={url} />
               ))}
             </div>
           )}

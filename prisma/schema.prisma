@@ -286,6 +286,9 @@ model Review {
 // An uploaded repair-list document (inspection report, repair addendum, etc.)
 // that an AI pass breaks into individual RepairLineItems. Each selected item
 // becomes its own ServiceRequest once the customer reviews and submits.
+// Contractors see the full source documents directly (fileUrl +
+// supportingDocumentUrls) rather than an AI-cropped page image per item —
+// that per-item matching proved unreliable, so it was replaced wholesale.
 model RepairDocument {
   id               String         @id @default(cuid())
   customerId       String
@@ -293,7 +296,7 @@ model RepairDocument {
   originalFilename String
   status           DocumentStatus @default(PROCESSING)
   errorMessage     String?
-  photoRenderError String?
+  supportingDocumentUrls String[] @default([])
   extractedAddressLine1 String?
   extractedCity         String?
   extractedState        String?
@@ -315,7 +318,6 @@ model RepairLineItem {
   suggestedCategoryId String?
   categoryId       String?
   pageNumber       Int?
-  pageImageUrl     String?
   selected         Boolean  @default(true)
   serviceRequestId String?  @unique
   createdAt        DateTime @default(now())

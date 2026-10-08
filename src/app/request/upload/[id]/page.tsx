@@ -65,7 +65,20 @@ export default async function ReviewRepairDocumentPage({ params }: { params: Pro
         From <span className="font-medium">{document.originalFilename}</span> — check the property
         address, uncheck anything you don't want sent, and adjust the category if needed.
       </p>
-      <ReviewForm document={document} categories={categories} />
+      <ReviewForm
+        document={{
+          id: document.id,
+          fileUrl: document.fileUrl,
+          originalFilename: document.originalFilename,
+          supportingDocumentUrls: document.supportingDocumentUrls,
+          extractedAddressLine1: document.extractedAddressLine1,
+          extractedCity: document.extractedCity,
+          extractedState: document.extractedState,
+          extractedZip: document.extractedZip,
+          lineItems: document.lineItems,
+        }}
+        categories={categories}
+      />
     </div>
   );
 }

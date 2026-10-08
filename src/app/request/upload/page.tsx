@@ -6,10 +6,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DocumentUploader } from '@/components/document-uploader';
+import { MultiFileUploader } from '@/components/multi-file-uploader';
 
 export default function UploadRepairDocumentPage() {
   const router = useRouter();
   const [file, setFile] = useState<{ url: string; filename: string } | null>(null);
+  const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +24,7 @@ export default function UploadRepairDocumentPage() {
       const res = await fetch('/api/repair-documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl: file.url, filename: file.filename }),
+        body: JSON.stringify({ fileUrl: file.url, filename: file.filename, supportingDocumentUrls }),
         signal: AbortSignal.timeout(65_000),
       });
 
@@ -49,15 +51,30 @@ export default function UploadRepairDocumentPage() {
     <div className="mx-auto max-w-2xl px-4 py-12">
       <h1 className="mb-2 text-2xl font-bold text-gray-900">Upload a repair list</h1>
       <p className="mb-6 text-gray-600">
-        Have an inspection report or repair addendum with multiple items? Upload it and we'll pull out
-        each repair, match it to the right type of pro, and let you review before sending anything out.
+        Have an inspection report or repair addendum with multiple items? Upload it and we&apos;ll pull out each
+        repair and match it to the right type of pro. Attach the full report too, so pros can see the original
+        source — no AI guesswork on photos.
       </p>
       <Card>
-        <CardContent className="flex flex-col gap-4">
-          <DocumentUploader onUploaded={setFile} />
+        <CardContent className="flex flex-col gap-6">
+          <div>
+            <h2 className="mb-2 font-semibold text-gray-900">1. Upload a repair list</h2>
+            <p className="mb-3 text-sm text-gray-500">The document we&apos;ll analyze to pull out each repair item.</p>
+            <DocumentUploader onUploaded={setFile} />
+          </div>
+
+          <div>
+            <h2 className="mb-2 font-semibold text-gray-900">2. Upload documents (optional)</h2>
+            <p className="mb-3 text-sm text-gray-500">
+              The full inspection report, repair addendum, or photos — attached as-is so pros can review the source
+              directly.
+            </p>
+            <MultiFileUploader value={supportingDocumentUrls} onChange={setSupportingDocumentUrls} />
+          </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button size="lg" disabled={!file || analyzing} onClick={handleAnalyze}>
-            {analyzing ? 'Analyzing document…' : 'Analyze document'}
+            {analyzing ? 'Analyzing list…' : '3. Analyze list'}
           </Button>
         </CardContent>
       </Card>
