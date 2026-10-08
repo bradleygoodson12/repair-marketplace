@@ -5,11 +5,13 @@ import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
+import { LEAD_FEE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
 import { ProProfileForm } from './profile-form';
+import { SubscriptionCard } from './subscription-card';
 
 export default async function ProDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -73,6 +75,15 @@ export default async function ProDashboardPage() {
           View public profile
         </Link>
       </div>
+
+      <SubscriptionCard
+        status={proProfile.subscriptionStatus}
+        currentPeriodEnd={
+          proProfile.subscriptionCurrentPeriodEnd ? proProfile.subscriptionCurrentPeriodEnd.toLocaleDateString() : null
+        }
+        subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
+        leadFeeDollars={LEAD_FEE_CENTS / 100}
+      />
 
       <h2 className="mb-4 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}

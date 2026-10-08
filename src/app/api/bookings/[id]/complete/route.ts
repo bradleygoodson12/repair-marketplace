@@ -19,8 +19,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (booking.request.customerId !== session.user.id) {
     return NextResponse.json({ error: 'Not authorized.' }, { status: 403 });
   }
-  if (booking.paymentStatus !== 'PAID') {
-    return NextResponse.json({ error: 'Booking must be paid before it can be marked complete.' }, { status: 409 });
+  if (booking.status === 'COMPLETED') {
+    return NextResponse.json({ error: 'This booking is already marked complete.' }, { status: 409 });
   }
 
   await prisma.booking.update({

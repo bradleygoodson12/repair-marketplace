@@ -5,6 +5,82 @@ import type Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 
+function subscriptionStatusFromStripe(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_DUE' | 'CANCELED' {
+  if (status === 'active' || status === 'trialing') return 'ACTIVE';
+  if (status === 'past_due' || status === 'unpaid') return 'PAST_DUE';
+  return 'CANCELED';
+}
+
+async function handleLeadChargeCheckout(checkoutSession: Stripe.Checkout.Session) {
+  const leadChargeId = checkoutSession.metadata?.leadChargeId;
+  if (!leadChargeId) return;
+
+  const leadCharge = await prisma.leadCharge.findUnique({ where: { id: leadChargeId } });
+  if (!leadCharge || leadCharge.status === 'PAID') return;
+
+  const quote = await prisma.quote.upsert({
+    where: { requestId_proProfileId: { requestId: leadCharge.requestId, proProfileId: leadCharge.proProfileId } },
+    update: {
+      priceCents: leadCharge.priceCents,
+      message: leadCharge.message,
+      estimatedDurationDays: leadCharge.estimatedDurationDays,
+      status: 'PENDING',
+    },
+    create: {
+      requestId: leadCharge.requestId,
+      proProfileId: leadCharge.proProfileId,
+      priceCents: leadCharge.priceCents,
+      message: leadCharge.message,
+      estimatedDurationDays: leadCharge.estimatedDurationDays,
+    },
+  });
+
+  await prisma.$transaction([
+    prisma.leadCharge.update({ where: { id: leadCharge.id }, data: { status: 'PAID', quoteId: quote.id } }),
+    prisma.serviceRequest.update({ where: { id: leadCharge.requestId }, data: { status: 'QUOTED' } }),
+  ]);
+}
+
+async function handleSubscriptionCheckout(checkoutSession: Stripe.Checkout.Session) {
+  const proProfileId = checkoutSession.metadata?.proProfileId;
+  if (!proProfileId || typeof checkoutSession.subscription !== 'string') return;
+
+  const subscription = await stripe.subscriptions.retrieve(checkoutSession.subscription);
+
+  await prisma.proProfile.update({
+    where: { id: proProfileId },
+    data: {
+      stripeCustomerId: typeof checkoutSession.customer === 'string' ? checkoutSession.customer : null,
+      stripeSubscriptionId: subscription.id,
+      subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
+      subscriptionCurrentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
+    },
+  });
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const proProfile = await prisma.proProfile.findFirst({ where: { stripeSubscriptionId: subscription.id } });
+  if (!proProfile) return;
+
+  await prisma.proProfile.update({
+    where: { id: proProfile.id },
+    data: {
+      subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
+      subscriptionCurrentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
+    },
+  });
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const proProfile = await prisma.proProfile.findFirst({ where: { stripeSubscriptionId: subscription.id } });
+  if (!proProfile) return;
+
+  await prisma.proProfile.update({
+    where: { id: proProfile.id },
+    data: { subscriptionStatus: 'CANCELED' },
+  });
+}
+
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = (await headers()).get('stripe-signature');
@@ -21,24 +97,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook signature verification failed.` }, { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const checkoutSession = event.data.object as Stripe.Checkout.Session;
-    const bookingId = checkoutSession.metadata?.bookingId;
-
-    if (bookingId) {
-      await prisma.booking.update({
-        where: { id: bookingId },
-        data: {
-          paymentStatus: 'PAID',
-          stripePaymentIntentId:
-            typeof checkoutSession.payment_intent === 'string' ? checkoutSession.payment_intent : null,
-        },
-      });
-      await prisma.serviceRequest.updateMany({
-        where: { booking: { id: bookingId } },
-        data: { status: 'IN_PROGRESS' },
-      });
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const checkoutSession = event.data.object as Stripe.Checkout.Session;
+      if (checkoutSession.mode === 'subscription') {
+        await handleSubscriptionCheckout(checkoutSession);
+      } else {
+        await handleLeadChargeCheckout(checkoutSession);
+      }
+      break;
     }
+    case 'customer.subscription.updated':
+      await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+      break;
+    case 'customer.subscription.deleted':
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      break;
   }
 
   return NextResponse.json({ received: true });

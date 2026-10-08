@@ -14,26 +14,39 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default async function AdminOverviewPage() {
-  const [customerCount, proCount, requestCount, openRequestCount, bookingCount, revenue] =
-    await Promise.all([
-      prisma.user.count({ where: { role: 'CUSTOMER' } }),
-      prisma.user.count({ where: { role: 'PRO' } }),
-      prisma.serviceRequest.count(),
-      prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
-      prisma.booking.count(),
-      prisma.booking.aggregate({ where: { paymentStatus: 'PAID' }, _sum: { totalCents: true } }),
-    ]);
+  const [
+    customerCount,
+    proCount,
+    requestCount,
+    openRequestCount,
+    bookingCount,
+    activeSubscriptions,
+    leadFeeRevenue,
+  ] = await Promise.all([
+    prisma.user.count({ where: { role: 'CUSTOMER' } }),
+    prisma.user.count({ where: { role: 'PRO' } }),
+    prisma.serviceRequest.count(),
+    prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
+    prisma.booking.count(),
+    prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+    prisma.leadCharge.aggregate({ where: { status: 'PAID' }, _sum: { feeCents: true } }),
+  ]);
 
   return (
     <div>
       <h2 className="mb-4 text-lg font-bold text-gray-900">Platform overview</h2>
+      <p className="mb-4 text-sm text-gray-500">
+        Pros pay FixItPro directly — via subscription or lead fees. Customers pay pros outside the app, so booking
+        totals aren't platform revenue.
+      </p>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Customers" value={customerCount.toLocaleString()} />
         <StatCard label="Pros" value={proCount.toLocaleString()} />
         <StatCard label="Total job requests" value={requestCount.toLocaleString()} />
         <StatCard label="Open requests" value={openRequestCount.toLocaleString()} />
         <StatCard label="Bookings" value={bookingCount.toLocaleString()} />
-        <StatCard label="Paid revenue" value={formatCents(revenue._sum.totalCents ?? 0)} />
+        <StatCard label="Active subscriptions" value={activeSubscriptions.toLocaleString()} />
+        <StatCard label="Lead fee revenue" value={formatCents(leadFeeRevenue._sum.feeCents ?? 0)} />
       </div>
     </div>
   );

@@ -4,12 +4,12 @@ import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
+import { LEAD_FEE_CENTS } from '@/lib/pricing';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 import { CompleteButton } from './complete-button';
 import { MessageThread } from './message-thread';
-import { PayButton } from './pay-button';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
 import { ReviewForm } from './review-form';
@@ -97,13 +97,13 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               <span>
                 {request.booking.quote.proProfile.businessName} · {formatCents(request.booking.totalCents)}
               </span>
-              <Badge status={request.booking.paymentStatus} />
             </div>
+            <p className="text-sm text-gray-500">
+              Pay {request.booking.quote.proProfile.businessName} directly for this job — FixItPro doesn't process
+              that payment.
+            </p>
 
-            {isCustomer && request.booking.paymentStatus !== 'PAID' && (
-              <PayButton bookingId={request.booking.id} />
-            )}
-            {isCustomer && request.booking.paymentStatus === 'PAID' && request.booking.status !== 'COMPLETED' && (
+            {isCustomer && request.booking.status !== 'COMPLETED' && (
               <CompleteButton bookingId={request.booking.id} />
             )}
             {isCustomer && request.booking.status === 'COMPLETED' && !request.booking.review && (
@@ -127,7 +127,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
-            <QuoteForm requestId={request.id} />
+            <QuoteForm
+              requestId={request.id}
+              hasActiveSubscription={proProfile.subscriptionStatus === 'ACTIVE'}
+              leadFeeDollars={LEAD_FEE_CENTS / 100}
+            />
           </CardContent>
         </Card>
       )}

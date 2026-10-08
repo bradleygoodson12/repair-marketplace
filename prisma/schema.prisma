@@ -36,11 +36,16 @@ enum BookingStatus {
   CANCELLED
 }
 
-enum PaymentStatus {
-  UNPAID
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum LeadChargeStatus {
   PENDING
   PAID
-  REFUNDED
   FAILED
 }
 
@@ -117,13 +122,21 @@ model ProProfile {
   verified          Boolean  @default(false)
   avgRating         Float    @default(0)
   reviewCount       Int      @default(0)
-  stripeAccountId   String?  // future: Stripe Connect payout account
+  // Pros are paid directly by customers outside the app. The only money the
+  // app ever charges a pro is its own fee: a flat per-quote lead fee, or a
+  // subscription that waives it. stripeCustomerId is the pro as a Stripe
+  // *customer* (billed), never a Connect payout account.
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  subscriptionStatus   SubscriptionStatus @default(NONE)
+  subscriptionCurrentPeriodEnd DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   categories ProProfileCategory[]
   quotes     Quote[]
+  leadCharges LeadCharge[]
   reviews    Review[]            @relation("ReviewsReceived")
 
   @@index([serviceZip])
@@ -205,6 +218,7 @@ model ServiceRequest {
   booking  Booking?
   messages Message[]
   repairLineItem RepairLineItem?
+  leadCharges    LeadCharge[]
 
   @@index([customerId])
   @@index([categoryId])
@@ -225,11 +239,16 @@ model Quote {
   request    ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   proProfile ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
   booking    Booking?
+  leadCharge LeadCharge?
 
   @@unique([requestId, proProfileId])
   @@index([requestId])
 }
 
+// Customers pay pros directly, outside the app — Booking exists only to
+// track scheduling/status, never payment. The app's own revenue is tracked
+// separately via LeadCharge (per-quote fees) and ProProfile's subscription
+// fields.
 model Booking {
   id                    String        @id @default(cuid())
   requestId             String        @unique
@@ -237,8 +256,6 @@ model Booking {
   scheduledDate         DateTime
   status                BookingStatus @default(SCHEDULED)
   totalCents            Int
-  paymentStatus         PaymentStatus @default(UNPAID)
-  stripePaymentIntentId String?
   createdAt             DateTime      @default(now())
   completedAt           DateTime?
 
@@ -319,4 +336,29 @@ model RepairLineItem {
   serviceRequest    ServiceRequest? @relation(fields: [serviceRequestId], references: [id])
 
   @@index([repairDocumentId])
+}
+
+// A pay-as-you-go pro's per-quote lead fee. Created PENDING (holding the
+// quote's would-be fields) when a non-subscribed pro submits a quote; the
+// Quote itself is only created once Stripe confirms payment, so an unpaid
+// quote never becomes visible to the customer.
+model LeadCharge {
+  id                      String           @id @default(cuid())
+  proProfileId            String
+  requestId               String
+  priceCents              Int
+  message                 String           @db.Text
+  estimatedDurationDays   Int?
+  feeCents                Int
+  status                  LeadChargeStatus @default(PENDING)
+  stripeCheckoutSessionId String?          @unique
+  quoteId                 String?          @unique
+  createdAt               DateTime         @default(now())
+
+  proProfile ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  request    ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  quote      Quote?         @relation(fields: [quoteId], references: [id])
+
+  @@index([proProfileId])
+  @@index([requestId])
 }

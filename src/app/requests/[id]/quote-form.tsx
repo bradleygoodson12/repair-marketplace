@@ -6,7 +6,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 
-export function QuoteForm({ requestId }: { requestId: string }) {
+export function QuoteForm({
+  requestId,
+  hasActiveSubscription,
+  leadFeeDollars,
+}: {
+  requestId: string;
+  hasActiveSubscription: boolean;
+  leadFeeDollars: number;
+}) {
   const router = useRouter();
   const [priceDollars, setPriceDollars] = useState('');
   const [message, setMessage] = useState('');
@@ -29,14 +37,20 @@ export function QuoteForm({ requestId }: { requestId: string }) {
       }),
     });
 
-    setLoading(false);
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      setLoading(false);
       setError(typeof data.error === 'string' ? data.error : 'Could not submit quote.');
       return;
     }
 
+    if (typeof data.checkoutUrl === 'string') {
+      window.location.href = data.checkoutUrl;
+      return;
+    }
+
+    setLoading(false);
     router.refresh();
   }
 
@@ -61,9 +75,19 @@ export function QuoteForm({ requestId }: { requestId: string }) {
         <label className="mb-1 block text-sm font-medium text-gray-700">Message to customer</label>
         <Textarea required rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
       </div>
+      {!hasActiveSubscription && (
+        <p className="text-sm text-gray-500">
+          This quote costs a ${leadFeeDollars} lead fee, charged via Stripe before it's sent. Subscribe from your
+          dashboard for unlimited quotes with no per-lead fee.
+        </p>
+      )}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
-        {loading ? 'Sending…' : 'Send quote'}
+        {loading
+          ? 'Sending…'
+          : hasActiveSubscription
+            ? 'Send quote'
+            : `Pay $${leadFeeDollars} & send quote`}
       </Button>
     </form>
   );
