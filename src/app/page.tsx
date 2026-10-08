@@ -27,8 +27,9 @@ export default async function HomePage() {
             Home repairs, handled by <span className="text-brand-400">trusted local pros</span>
           </h1>
           <p className="max-w-2xl text-lg text-gray-400">
-            Tell us what&apos;s broken, get quotes from vetted repair pros near you, and book with confidence — all
-            in one place.
+            <span className="block font-semibold text-white">Need a repair? We make it painless.</span>
+            Get fast quotes from top-rated, vetted pros near your property, then book with confidence—all in one
+            simple platform.
           </p>
           <ZipSearchForm />
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
