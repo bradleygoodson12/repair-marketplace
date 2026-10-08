@@ -95,7 +95,7 @@ export default async function ProDashboardPage() {
         <div className="mb-8 flex flex-col gap-3">
           {leads.map(({ request: r, distance }) => (
             <Link key={r.id} href={`/requests/${r.id}`}>
-              <Card className="transition-shadow hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
                 <CardContent className="flex items-center justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">

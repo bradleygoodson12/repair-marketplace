@@ -48,7 +48,7 @@ export function MessageThread({ requestId, messages, currentUserId }: {
             key={m.id}
             className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
               m.sender.id === currentUserId
-                ? 'ml-auto bg-brand-500 text-white'
+                ? 'ml-auto bg-gray-950 text-white'
                 : 'bg-gray-100 text-gray-800'
             }`}
           >

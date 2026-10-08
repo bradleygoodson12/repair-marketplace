@@ -22,15 +22,27 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pro.businessName}</h1>
-          <div className="mt-1 flex items-center gap-3">
-            <StarRating rating={pro.avgRating} count={pro.reviewCount} />
-            {pro.verified && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                Verified pro
-              </span>
-            )}
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gray-950 text-lg font-bold text-brand-400">
+            {pro.businessName.charAt(0).toUpperCase()}
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{pro.businessName}</h1>
+            <div className="mt-1 flex items-center gap-3">
+              <StarRating rating={pro.avgRating} count={pro.reviewCount} />
+              {pro.verified && (
+                <span className="flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Verified pro
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <Link href={`/request/new?proId=${pro.id}`}>

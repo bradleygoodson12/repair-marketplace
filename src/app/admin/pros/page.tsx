@@ -25,7 +25,7 @@ export default async function AdminProsPage() {
                     {pro.businessName}
                   </Link>
                   {pro.verified && (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800">
                       Verified
                     </span>
                   )}

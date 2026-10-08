@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Select } from '@/components/ui/input';
@@ -49,9 +50,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <Card>
-        <CardContent>
+    <AuthShell>
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8">
           <h1 className="mb-6 text-2xl font-bold text-gray-900">Create your account</h1>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
@@ -92,6 +93,6 @@ export default function SignupPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

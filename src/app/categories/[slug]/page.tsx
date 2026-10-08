@@ -67,7 +67,9 @@ export default async function CategoryDetailPage({
         </Link>
       </div>
 
-      {zipNotice && <p className="mb-4 text-sm text-gray-500">{zipNotice}</p>}
+      {zipNotice && (
+        <p className="mb-6 inline-flex rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">{zipNotice}</p>
+      )}
 
       {pros.length === 0 ? (
         <p className="text-gray-500">No pros listed for this category yet.</p>

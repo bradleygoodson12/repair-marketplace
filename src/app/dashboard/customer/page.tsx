@@ -40,7 +40,7 @@ export default async function CustomerDashboardPage() {
         <div className="flex flex-col gap-3">
           {requests.map((r) => (
             <Link key={r.id} href={`/requests/${r.id}`}>
-              <Card className="transition-shadow hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
                 <CardContent className="flex items-center justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">

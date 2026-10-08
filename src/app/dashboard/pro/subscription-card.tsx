@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface Props {
   status: 'NONE' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
@@ -42,9 +43,10 @@ export function SubscriptionCard({ status, currentPeriodEnd, subscriptionPriceDo
   }
 
   const isActive = status === 'ACTIVE';
+  const needsAttention = status === 'NONE' || status === 'CANCELED' || status === 'PAST_DUE';
 
   return (
-    <Card className="mb-8">
+    <Card className={cn('mb-8', needsAttention && 'border-brand-200 bg-brand-50')}>
       <CardContent className="flex items-center justify-between gap-4">
         <div>
           <h2 className="font-bold text-gray-900">{isActive ? 'Subscription active' : 'Subscription required'}</h2>
