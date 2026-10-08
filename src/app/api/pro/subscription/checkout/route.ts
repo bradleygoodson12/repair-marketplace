@@ -31,7 +31,7 @@ export async function POST() {
       {
         price_data: {
           currency: 'usd',
-          product_data: { name: 'FixItPro pro subscription — unlimited quotes' },
+          product_data: { name: 'Repair Bee pro subscription — unlimited quotes' },
           unit_amount: SUBSCRIPTION_PRICE_CENTS,
           recurring: { interval: 'month' },
         },

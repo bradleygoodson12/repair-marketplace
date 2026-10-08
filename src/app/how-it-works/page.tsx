@@ -7,7 +7,7 @@ const homeownerSteps = [
   'Post a repair job with a description, photos, and your address.',
   'Vetted local pros send you quotes with pricing and timelines.',
   'Compare quotes, message pros with questions, and accept the one you like.',
-  'Schedule the work and pay your pro directly — FixItPro never touches that payment.',
+  'Schedule the work and pay your pro directly — Repair Bee never touches that payment.',
   'Leave a review after the job is done to help other homeowners.',
 ];
 
@@ -38,7 +38,7 @@ export default function HowItWorksPage() {
     <div>
       <section className="bg-gray-950">
         <div className="mx-auto max-w-5xl px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">How FixItPro works</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">How Repair Bee works</h1>
           <p className="mx-auto mt-3 max-w-xl text-gray-400">
             A straightforward path for homeowners to get repairs done, and for pros to grow their business.
           </p>

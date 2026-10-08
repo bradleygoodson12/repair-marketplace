@@ -1,12 +1,12 @@
+import { Logo } from '@/components/logo';
+
 const pitchPoints = ['Vetted & background-checked pros', 'Free, no-obligation quotes', 'Message pros directly'];
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-[calc(100vh-15rem)] flex-col md:flex-row">
       <div className="hidden flex-col justify-center bg-gray-950 px-12 py-16 md:flex md:w-2/5">
-        <span className="text-2xl font-bold tracking-tight text-white">
-          FixIt<span className="text-brand-400">Pro</span>
-        </span>
+        <Logo size={32} className="text-2xl" />
         <p className="mt-4 max-w-xs text-gray-400">
           Home repairs, handled by trusted local pros. Get quotes, compare pros, and book with confidence.
         </p>

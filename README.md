@@ -1,9 +1,9 @@
-# FixItPro — Home Repair Marketplace
+# Repair Bee — Home Repair Marketplace
 
 A Thumbtack-style, two-sided marketplace for home repair services: homeowners post jobs and vetted
 pros send quotes. This is a **lead-generation marketplace, not an escrow marketplace**: customers pay
 pros directly, outside the app, for the work itself. The only money that flows through the app is pros
-paying FixItPro a monthly subscription for access.
+paying Repair Bee a monthly subscription for access.
 
 ## Stack
 
@@ -23,7 +23,7 @@ paying FixItPro a monthly subscription for access.
    unsubscribed pro sees a "subscribe to quote" prompt instead — see "Pro monetization" below.
 3. Customer accepts a quote → creates a `Booking` (tracks scheduling/status only, no payment).
 4. Customer pays the pro directly, however they agree to — cash, check, Venmo, the pro's own invoice.
-   FixItPro never touches that money and has no record of it.
+   Repair Bee never touches that money and has no record of it.
 5. Customer marks the job completed → can leave a `Review`, which rolls up into the pro's
    `avgRating`/`reviewCount`.
 

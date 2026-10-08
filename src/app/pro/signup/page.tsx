@@ -17,7 +17,7 @@ export default function ProSignupLandingPage() {
       <section className="bg-gray-950">
         <div className="mx-auto max-w-3xl px-4 py-20 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Grow your repair business with <span className="text-brand-400">FixItPro</span>
+            Grow your repair business with <span className="text-brand-400">Repair Bee</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-gray-400">
             Get matched with local homeowners who need your services, send quotes, and get paid directly — no

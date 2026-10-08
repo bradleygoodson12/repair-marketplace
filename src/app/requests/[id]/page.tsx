@@ -100,7 +100,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               </span>
             </div>
             <p className="text-sm text-gray-500">
-              Pay {request.booking.quote.proProfile.businessName} directly for this job — FixItPro doesn't process
+              Pay {request.booking.quote.proProfile.businessName} directly for this job — Repair Bee doesn't process
               that payment.
             </p>
 

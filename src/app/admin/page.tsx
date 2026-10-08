@@ -29,7 +29,7 @@ export default async function AdminOverviewPage() {
     <div>
       <h2 className="mb-4 text-lg font-bold text-gray-900">Platform overview</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Pros pay FixItPro a monthly subscription. Customers pay pros directly outside the app, so booking totals
+        Pros pay Repair Bee a monthly subscription. Customers pay pros directly outside the app, so booking totals
         aren't platform revenue.
       </p>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
