@@ -1,10 +1,11 @@
+import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { LEAD_FEE_CENTS } from '@/lib/pricing';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
@@ -123,15 +124,24 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      {proProfile && !myQuote && !request.booking && (
+      {proProfile && !myQuote && !request.booking && proProfile.subscriptionStatus === 'ACTIVE' && (
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
-            <QuoteForm
-              requestId={request.id}
-              hasActiveSubscription={proProfile.subscriptionStatus === 'ACTIVE'}
-              leadFeeDollars={LEAD_FEE_CENTS / 100}
-            />
+            <QuoteForm requestId={request.id} />
+          </CardContent>
+        </Card>
+      )}
+
+      {proProfile && !myQuote && !request.booking && proProfile.subscriptionStatus !== 'ACTIVE' && (
+        <Card className="mb-6">
+          <CardContent className="flex items-center justify-between gap-4">
+            <p className="text-sm text-gray-600">
+              An active subscription is required to submit quotes. Subscribe from your dashboard to quote this job.
+            </p>
+            <Link href="/dashboard/pro">
+              <Button size="sm">Subscribe</Button>
+            </Link>
           </CardContent>
         </Card>
       )}

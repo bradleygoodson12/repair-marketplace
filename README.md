@@ -3,7 +3,7 @@
 A Thumbtack-style, two-sided marketplace for home repair services: homeowners post jobs and vetted
 pros send quotes. This is a **lead-generation marketplace, not an escrow marketplace**: customers pay
 pros directly, outside the app, for the work itself. The only money that flows through the app is pros
-paying the platform for access — via a monthly subscription or a per-quote lead fee.
+paying FixItPro a monthly subscription for access.
 
 ## Stack
 
@@ -11,7 +11,7 @@ paying the platform for access — via a monthly subscription or a per-quote lea
 - **Prisma** ORM on **PostgreSQL**
 - **NextAuth** (credentials-based auth, JWT sessions)
 - **Tailwind CSS** for styling
-- **Stripe Checkout** + **Billing Portal** for pro-facing payments (lead fees, subscriptions)
+- **Stripe Checkout** + **Billing Portal** for the pro subscription
 - **Vercel Blob** for job-photo and repair-document uploads
 - **`zipcodes`** (bundled US zip centroid data, no external API) for zip-radius pro matching
 - **Claude API** (`claude-sonnet-5`) for parsing uploaded repair-list PDFs into line items
@@ -19,9 +19,8 @@ paying the platform for access — via a monthly subscription or a per-quote lea
 ## Core flow
 
 1. Customer posts a `ServiceRequest` tied to a `Property` (address) and a `Category`.
-2. Matching `ProProfile`s see the request as a lead. Submitting a `Quote` is free for subscribed pros;
-   everyone else pays a flat lead fee (`LEAD_FEE_CENTS` in `src/lib/pricing.ts`) via Stripe Checkout
-   before the quote becomes visible to the customer — see "Pro monetization" below.
+2. Matching `ProProfile`s see the request as a lead. A subscribed pro can submit a `Quote`; an
+   unsubscribed pro sees a "subscribe to quote" prompt instead — see "Pro monetization" below.
 3. Customer accepts a quote → creates a `Booking` (tracks scheduling/status only, no payment).
 4. Customer pays the pro directly, however they agree to — cash, check, Venmo, the pro's own invoice.
    FixItPro never touches that money and has no record of it.
@@ -32,28 +31,27 @@ paying the platform for access — via a monthly subscription or a per-quote lea
 
 ## Pro monetization
 
-Pros are never paid out through the app (no Stripe Connect, no payout compliance). Instead:
+Pros are never paid out through the app (no Stripe Connect, no payout compliance). Every pro must have
+an active subscription (`SUBSCRIPTION_PRICE_CENTS` in `src/lib/pricing.ts`, default $20/mo) to see leads
+or submit quotes at all — there's no pay-per-lead fallback, since pros are expected to be subscribed and
+admin-vetted (`ProProfile.verified`) before operating on the platform.
 
-- **Subscription** (`SUBSCRIPTION_PRICE_CENTS`, default $49/mo): unlimited free quotes. Managed from
-  the pro dashboard (`SubscriptionCard`) via `POST /api/pro/subscription/checkout` (Stripe Checkout,
-  `mode: subscription`) and `POST /api/pro/subscription/portal` (Stripe Billing Portal, for
-  cancel/update-card). `ProProfile.subscriptionStatus`/`subscriptionCurrentPeriodEnd` are kept in sync
-  by the `checkout.session.completed`, `customer.subscription.updated`, and
-  `customer.subscription.deleted` webhook handlers in `src/app/api/webhooks/stripe/route.ts`.
-- **Per-quote lead fee** (`LEAD_FEE_CENTS`, default $9): for pros without an active subscription,
-  `POST /api/requests/[id]/quotes` doesn't create the `Quote` directly — it stores the submitted quote
-  fields on a `LeadCharge` row (`status: PENDING`) and returns a Stripe Checkout URL. The `Quote` only
-  gets created, and the request only moves to `QUOTED`, once the webhook sees
-  `checkout.session.completed` and flips the `LeadCharge` to `PAID`. This means an unpaid quote never
-  exists in a form the customer can see.
-- Both prices are created as ad hoc Stripe `price_data` at checkout time rather than pre-created Stripe
-  Price objects — simplest for now, but means a Stripe dashboard price change has no effect; update
-  `src/lib/pricing.ts` instead.
+- Managed from the pro dashboard (`SubscriptionCard`) via `POST /api/pro/subscription/checkout` (Stripe
+  Checkout, `mode: subscription`) and `POST /api/pro/subscription/portal` (Stripe Billing Portal, for
+  cancel/update-card).
+- `ProProfile.subscriptionStatus`/`subscriptionCurrentPeriodEnd` are kept in sync by the
+  `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`
+  webhook handlers in `src/app/api/webhooks/stripe/route.ts`.
+- `POST /api/requests/[id]/quotes` (and the dashboard/request-page UI) checks
+  `proProfile.subscriptionStatus === 'ACTIVE'` before allowing a quote.
+- The price is created as an ad hoc Stripe `price_data` at checkout time rather than a pre-created
+  Stripe Price object — simplest for now, but means a Stripe dashboard price change has no effect;
+  update `src/lib/pricing.ts` instead.
 
 ## Admin panel
 
 Accounts with `role: ADMIN` get an `/admin` link in place of the regular dashboard link, covering:
-- **Overview** — platform-wide counts and paid revenue.
+- **Overview** — platform-wide counts, active subscriptions, and estimated monthly subscription revenue.
 - **Users** — every account, with a suspend/unsuspend toggle (suspended accounts can't log in).
 - **Pros** — every pro profile, with a verified/unverified toggle.
 - **Listings** — every job request, with a one-click cancel for bad listings.

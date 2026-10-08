@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { LEAD_FEE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
+import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
@@ -82,13 +82,14 @@ export default async function ProDashboardPage() {
           proProfile.subscriptionCurrentPeriodEnd ? proProfile.subscriptionCurrentPeriodEnd.toLocaleDateString() : null
         }
         subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
-        leadFeeDollars={LEAD_FEE_CENTS / 100}
       />
 
       <h2 className="mb-4 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
-      {leads.length === 0 ? (
+      {proProfile.subscriptionStatus !== 'ACTIVE' ? (
+        <p className="mb-8 text-gray-500">Subscribe above to see and quote job leads in your area.</p>
+      ) : leads.length === 0 ? (
         <p className="mb-8 text-gray-500">No open leads in your service area right now — check back soon.</p>
       ) : (
         <div className="mb-8 flex flex-col gap-3">

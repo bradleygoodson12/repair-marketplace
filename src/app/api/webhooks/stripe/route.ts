@@ -11,36 +11,6 @@ function subscriptionStatusFromStripe(status: Stripe.Subscription.Status): 'ACTI
   return 'CANCELED';
 }
 
-async function handleLeadChargeCheckout(checkoutSession: Stripe.Checkout.Session) {
-  const leadChargeId = checkoutSession.metadata?.leadChargeId;
-  if (!leadChargeId) return;
-
-  const leadCharge = await prisma.leadCharge.findUnique({ where: { id: leadChargeId } });
-  if (!leadCharge || leadCharge.status === 'PAID') return;
-
-  const quote = await prisma.quote.upsert({
-    where: { requestId_proProfileId: { requestId: leadCharge.requestId, proProfileId: leadCharge.proProfileId } },
-    update: {
-      priceCents: leadCharge.priceCents,
-      message: leadCharge.message,
-      estimatedDurationDays: leadCharge.estimatedDurationDays,
-      status: 'PENDING',
-    },
-    create: {
-      requestId: leadCharge.requestId,
-      proProfileId: leadCharge.proProfileId,
-      priceCents: leadCharge.priceCents,
-      message: leadCharge.message,
-      estimatedDurationDays: leadCharge.estimatedDurationDays,
-    },
-  });
-
-  await prisma.$transaction([
-    prisma.leadCharge.update({ where: { id: leadCharge.id }, data: { status: 'PAID', quoteId: quote.id } }),
-    prisma.serviceRequest.update({ where: { id: leadCharge.requestId }, data: { status: 'QUOTED' } }),
-  ]);
-}
-
 async function handleSubscriptionCheckout(checkoutSession: Stripe.Checkout.Session) {
   const proProfileId = checkoutSession.metadata?.proProfileId;
   if (!proProfileId || typeof checkoutSession.subscription !== 'string') return;
@@ -98,15 +68,9 @@ export async function POST(req: Request) {
   }
 
   switch (event.type) {
-    case 'checkout.session.completed': {
-      const checkoutSession = event.data.object as Stripe.Checkout.Session;
-      if (checkoutSession.mode === 'subscription') {
-        await handleSubscriptionCheckout(checkoutSession);
-      } else {
-        await handleLeadChargeCheckout(checkoutSession);
-      }
+    case 'checkout.session.completed':
+      await handleSubscriptionCheckout(event.data.object as Stripe.Checkout.Session);
       break;
-    }
     case 'customer.subscription.updated':
       await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
       break;

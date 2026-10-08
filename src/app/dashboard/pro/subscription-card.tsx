@@ -9,10 +9,9 @@ interface Props {
   status: 'NONE' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
   currentPeriodEnd: string | null;
   subscriptionPriceDollars: number;
-  leadFeeDollars: number;
 }
 
-export function SubscriptionCard({ status, currentPeriodEnd, subscriptionPriceDollars, leadFeeDollars }: Props) {
+export function SubscriptionCard({ status, currentPeriodEnd, subscriptionPriceDollars }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,15 +47,13 @@ export function SubscriptionCard({ status, currentPeriodEnd, subscriptionPriceDo
     <Card className="mb-8">
       <CardContent className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-bold text-gray-900">
-            {isActive ? 'Subscription active' : 'Pay-as-you-go'}
-          </h2>
+          <h2 className="font-bold text-gray-900">{isActive ? 'Subscription active' : 'Subscription required'}</h2>
           <p className="text-sm text-gray-600">
             {isActive
-              ? `Unlimited quotes, no per-lead fee${currentPeriodEnd ? ` · renews ${currentPeriodEnd}` : ''}.`
+              ? `You can see and quote job leads${currentPeriodEnd ? ` · renews ${currentPeriodEnd}` : ''}.`
               : status === 'PAST_DUE'
-                ? 'Your subscription payment failed — update billing to avoid losing access.'
-                : `Each quote costs a $${leadFeeDollars} lead fee. Subscribe for $${subscriptionPriceDollars}/month for unlimited quotes.`}
+                ? 'Your subscription payment failed — update billing to keep quoting.'
+                : `Subscribe for $${subscriptionPriceDollars}/month to see and quote job leads.`}
           </p>
           {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
         </div>
