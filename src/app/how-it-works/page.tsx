@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const homeownerSteps = [
   'Post a repair job with a description, photos, and your address.',
-  'Vetted local pros send you quotes with pricing and timelines.',
+  'Verified local pros send you quotes with pricing and timelines.',
   'Compare quotes, message pros with questions, and accept the one you like.',
   'Schedule the work and pay your pro directly — Repair Bee never touches that payment.',
   'Leave a review after the job is done to help other homeowners.',

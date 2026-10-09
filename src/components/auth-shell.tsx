@@ -1,6 +1,6 @@
 import { Logo } from '@/components/logo';
 
-const pitchPoints = ['Vetted & background-checked pros', 'Free, no-obligation quotes', 'Message pros directly'];
+const pitchPoints = ['Verified pro profiles', 'Free, no-obligation quotes', 'Message pros directly'];
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (

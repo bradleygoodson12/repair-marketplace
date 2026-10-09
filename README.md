@@ -77,7 +77,23 @@ goes out from Resend's sandbox sender (`onboarding@resend.dev`), which **only de
 Resend account's own email address** — fine for development, but real pros won't receive anything
 until you verify a domain in Resend and set `RESEND_FROM_EMAIL` to an address on it.
 
-## Designed for future real-estate API integration
+## Legal — ⚠️ draft, not reviewed
+
+`/terms` and `/privacy` (`src/app/terms/page.tsx`, `src/app/privacy/page.tsx`) are a first-pass
+Terms of Service and Privacy Policy, linked from the footer and the signup page. **They were
+drafted by Claude, not a lawyer, and must be reviewed by a licensed attorney in your jurisdiction
+before you launch or rely on them.** What they get right: an accurate, specific description of how
+Repair Bee actually works — the direct-pay model, what "Verified" does and doesn't mean, which
+third parties (Stripe, Vercel, Anthropic, Resend) see what data, and the AI-document-processing
+disclosure. What they don't have: your actual legal entity name, business address, or governing
+state — each page has a `const` block at the top with bracketed placeholders (e.g.
+`LEGAL_ENTITY_NAME`) to fill in, plus a `[DATE]` placeholder for "Last updated" to set once this is
+actually reviewed and published.
+
+Also worth knowing: the homepage/meta copy used to say pros are "vetted & background-checked."
+There's no actual background-check process — only an admin-togglable `ProProfile.verified` flag —
+so every instance of that claim was changed to "verified" to match what's actually true. If you add
+a real vetting process later, the copy can say more again.
 
 The `Property` model intentionally carries `externalProvider`, `externalId`, and a free-form
 `enrichmentData` JSON field. These are unused today, but let a future integration (e.g. Zillow,

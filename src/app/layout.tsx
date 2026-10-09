@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Repair Bee | Home Repair Marketplace',
-  description: 'Find trusted, vetted pros for any home repair job — get quotes, compare pros, and book with confidence.',
+  description: 'Find trusted, verified pros for any home repair job — get quotes, compare pros, and book with confidence.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

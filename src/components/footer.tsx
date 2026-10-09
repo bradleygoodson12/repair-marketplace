@@ -23,6 +23,8 @@ const columns = [
     links: [
       { href: '/login', label: 'Log in' },
       { href: '/signup', label: 'Sign up' },
+      { href: '/terms', label: 'Terms of Service' },
+      { href: '/privacy', label: 'Privacy Policy' },
     ],
   },
 ];

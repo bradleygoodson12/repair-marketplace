@@ -91,6 +91,17 @@ export default function SignupPage() {
               Log in
             </Link>
           </p>
+          <p className="mt-3 text-xs text-gray-400">
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" className="underline hover:text-gray-600">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="underline hover:text-gray-600">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </AuthShell>

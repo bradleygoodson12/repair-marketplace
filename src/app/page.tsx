@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export const revalidate = 3600;
 
-const trustPoints = ['Vetted & background-checked pros', 'Free, no-obligation quotes', 'Message pros directly'];
+const trustPoints = ['Verified pro profiles', 'Free, no-obligation quotes', 'Message pros directly'];
 
 const steps = [
   {
@@ -58,7 +58,7 @@ export default async function HomePage() {
           </h1>
           <p className="max-w-2xl text-lg text-gray-400">
             <span className="block font-semibold text-white">Need a repair? We make it painless.</span>
-            Get fast quotes from top-rated, vetted pros near your property, then book with confidence—all in one
+            Get fast quotes from top-rated, verified pros near your property, then book with confidence—all in one
             simple platform.
           </p>
           <ZipSearchForm />
