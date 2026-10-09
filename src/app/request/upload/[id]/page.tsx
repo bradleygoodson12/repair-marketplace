@@ -1,10 +1,13 @@
+import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+import { ProcessingPoller } from './processing-poller';
 import { ReviewForm } from './review-form';
 
 export default async function ReviewRepairDocumentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,9 +25,12 @@ export default async function ReviewRepairDocumentPage({ params }: { params: Pro
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <Card>
-          <CardContent>
-            <h1 className="mb-2 text-xl font-bold text-gray-900">Analysis failed</h1>
+          <CardContent className="flex flex-col items-start gap-3">
+            <h1 className="text-xl font-bold text-gray-900">Analysis failed</h1>
             <p className="text-gray-600">{document.errorMessage ?? 'Something went wrong reading that document.'}</p>
+            <Link href="/request/upload">
+              <Button variant="outline">Try again</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -34,9 +40,17 @@ export default async function ReviewRepairDocumentPage({ params }: { params: Pro
   if (document.status === 'PROCESSING') {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
+        <ProcessingPoller />
         <Card>
-          <CardContent>
-            <p className="text-gray-600">Still analyzing — refresh this page in a moment.</p>
+          <CardContent className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="h-4 w-4 flex-shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-gray-950"
+            />
+            <p className="text-gray-600">
+              Analyzing <span className="font-medium">{document.originalFilename}</span> — this updates
+              automatically, usually within a minute.
+            </p>
           </CardContent>
         </Card>
       </div>

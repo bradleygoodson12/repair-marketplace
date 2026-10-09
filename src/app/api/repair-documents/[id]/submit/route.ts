@@ -23,6 +23,11 @@ const schema = z.object({
     )
     .min(1),
   supportingDocumentUrls: z.array(z.string().url()).default([]),
+  // Applies uniformly to every request created from this batch — asking for
+  // these per item would undo the point of reviewing a long list quickly.
+  budgetMinCents: z.number().int().positive().nullable().optional(),
+  budgetMaxCents: z.number().int().positive().nullable().optional(),
+  preferredDate: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,7 +48,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { property, items, supportingDocumentUrls } = parsed.data;
+  const { property, items, supportingDocumentUrls, budgetMinCents, budgetMaxCents, preferredDate } = parsed.data;
 
   const validLineItemIds = new Set(document.lineItems.map((li) => li.id));
   if (items.some((i) => !validLineItemIds.has(i.id))) {
@@ -54,6 +59,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // whatever else was attached — so pros can review it directly instead of
   // relying on an AI-cropped page image per item.
   const attachmentUrls = [...new Set([document.fileUrl, ...supportingDocumentUrls])];
+  const pageNumberById = new Map(document.lineItems.map((li) => [li.id, li.pageNumber]));
 
   const createdProperty = await prisma.property.create({
     data: { ownerId: session.user.id, ...property },
@@ -71,6 +77,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           title: item.title,
           description: item.description,
           photoUrls: attachmentUrls,
+          sourcePageNumber: pageNumberById.get(item.id) ?? null,
+          budgetMinCents: budgetMinCents ?? null,
+          budgetMaxCents: budgetMaxCents ?? null,
+          preferredDate: preferredDate ? new Date(preferredDate) : null,
         },
       });
       await tx.repairLineItem.update({

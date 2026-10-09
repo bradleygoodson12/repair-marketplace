@@ -25,12 +25,12 @@ export default function UploadRepairDocumentPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileUrl: file.url, filename: file.filename, supportingDocumentUrls }),
-        signal: AbortSignal.timeout(65_000),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(typeof data.error === 'string' ? data.error : 'Could not analyze that document.');
+        setError(typeof data.error === 'string' ? data.error : 'Could not start analyzing that document.');
         setAnalyzing(false);
         return;
       }
@@ -40,7 +40,7 @@ export default function UploadRepairDocumentPage() {
     } catch (e) {
       setError(
         e instanceof Error && e.name === 'TimeoutError'
-          ? 'That took too long to analyze. Try a shorter document, or try again.'
+          ? 'Could not reach the server in time. Try again.'
           : 'Could not reach the server. Check your connection and try again.',
       );
       setAnalyzing(false);
@@ -64,17 +64,17 @@ export default function UploadRepairDocumentPage() {
           </div>
 
           <div>
-            <h2 className="mb-2 font-semibold text-gray-900">2. Upload documents (optional)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">2. Anything else to attach? (optional)</h2>
             <p className="mb-3 text-sm text-gray-500">
-              The full inspection report, repair addendum, or photos — attached as-is so pros can review the source
-              directly.
+              The document above is already shared with pros in full — only add files here if you have separate
+              ones, like extra photos or a second report.
             </p>
             <MultiFileUploader value={supportingDocumentUrls} onChange={setSupportingDocumentUrls} />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button size="lg" disabled={!file || analyzing} onClick={handleAnalyze}>
-            {analyzing ? 'Analyzing list…' : '3. Analyze list'}
+            {analyzing ? 'Starting…' : '3. Analyze list'}
           </Button>
         </CardContent>
       </Card>

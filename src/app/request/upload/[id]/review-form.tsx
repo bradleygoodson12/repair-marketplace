@@ -50,12 +50,22 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
     })),
   );
   const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>(document.supportingDocumentUrls);
+  const [budgetMin, setBudgetMin] = useState('');
+  const [budgetMax, setBudgetMax] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; title: string }[] | null>(null);
 
+  const selectedCount = items.filter((i) => i.selected).length;
+  const allSelected = items.length > 0 && selectedCount === items.length;
+
   function updateItem(id: string, patch: Partial<ItemState>) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  }
+
+  function setAllSelected(selected: boolean) {
+    setItems((prev) => prev.map((i) => ({ ...i, selected })));
   }
 
   async function handleSubmit() {
@@ -79,6 +89,9 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
         property: { addressLine1, city, state, zip },
         items: selectedItems.map((i) => ({ id: i.id, title: i.title, description: i.description, categoryId: i.categoryId })),
         supportingDocumentUrls,
+        budgetMinCents: budgetMin ? Math.round(parseFloat(budgetMin) * 100) : null,
+        budgetMaxCents: budgetMax ? Math.round(parseFloat(budgetMax) * 100) : null,
+        preferredDate: preferredDate || null,
       }),
     });
 
@@ -133,6 +146,19 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-gray-900">
+          {selectedCount} of {items.length} item(s) selected
+        </h2>
+        <button
+          type="button"
+          onClick={() => setAllSelected(!allSelected)}
+          className="text-sm font-medium text-brand-700 hover:underline"
+        >
+          {allSelected ? 'Deselect all' : 'Select all'}
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3">
         {items.map((item) => (
           <Card key={item.id} className={item.selected ? '' : 'opacity-50'}>
@@ -170,6 +196,29 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardContent>
+          <h2 className="mb-1 font-semibold text-gray-900">Budget & timing (optional)</h2>
+          <p className="mb-3 text-sm text-gray-500">
+            Applies to every request below — gives pros useful context without asking for it per item.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">Budget min ($)</label>
+              <Input type="number" min="0" value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">Budget max ($)</label>
+              <Input type="number" min="0" value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">Preferred date</label>
+              <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent>

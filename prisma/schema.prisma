@@ -201,6 +201,10 @@ model ServiceRequest {
   budgetMaxCents       Int?
   preferredDate       DateTime?
   photoUrls           String[]      @default([])
+  // Set when this request was created from a RepairDocument line item, so
+  // pros have a quick pointer into a long attached report instead of
+  // having to search the whole thing.
+  sourcePageNumber    Int?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 

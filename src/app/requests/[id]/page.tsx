@@ -70,6 +70,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               ))}
             </div>
           )}
+          {request.sourcePageNumber && (
+            <p className="text-sm text-gray-500">
+              📄 Referenced on page {request.sourcePageNumber} of the attached report.
+            </p>
+          )}
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             {(request.budgetMinCents || request.budgetMaxCents) && (
               <span>
