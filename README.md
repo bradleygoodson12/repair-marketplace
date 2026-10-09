@@ -59,6 +59,24 @@ Accounts with `role: ADMIN` get an `/admin` link in place of the regular dashboa
 There's no self-serve way to become an admin — promote a user by hand (`UPDATE "User" SET role =
 'ADMIN' WHERE email = '...'`) or seed one, as `prisma/seed.ts` does for `admin@example.com`.
 
+## Email notifications (Resend)
+
+Pros get emailed (`src/lib/email.ts`, triggered from `after()` in the relevant route so it never
+blocks the response) on:
+- **New matching lead** — a `ServiceRequest` is created (either flow) that matches their
+  categories and service radius, and they have an active subscription. See
+  `src/lib/notifications.ts#notifyMatchingPros`.
+- **New message** — a customer messages on a request they've quoted.
+- **Quote accepted** — a customer accepts their quote.
+- **Subscription payment failed** — their subscription transitions into `PAST_DUE` (only on the
+  transition, not on every webhook event while it stays that way).
+
+Without `RESEND_API_KEY` set, every send is a no-op that logs to the console instead of throwing —
+nothing else in the app depends on email succeeding. With it set but no `RESEND_FROM_EMAIL`, mail
+goes out from Resend's sandbox sender (`onboarding@resend.dev`), which **only delivers to the
+Resend account's own email address** — fine for development, but real pros won't receive anything
+until you verify a domain in Resend and set `RESEND_FROM_EMAIL` to an address on it.
+
 ## Designed for future real-estate API integration
 
 The `Property` model intentionally carries `externalProvider`, `externalId`, and a free-form

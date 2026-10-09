@@ -1,7 +1,8 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
+import { sendQuoteAcceptedEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +14,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const quote = await prisma.quote.findUnique({
     where: { id },
-    include: { request: true },
+    include: { request: true, proProfile: { include: { user: true } } },
   });
 
   if (!quote) return NextResponse.json({ error: 'Quote not found.' }, { status: 404 });
@@ -41,6 +42,16 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       },
     });
   });
+
+  after(() =>
+    sendQuoteAcceptedEmail({
+      to: quote.proProfile.user.email,
+      businessName: quote.proProfile.businessName,
+      requestTitle: quote.request.title,
+      customerName: session.user.name ?? 'The customer',
+      requestId: quote.requestId,
+    }),
+  );
 
   return NextResponse.json({ id: booking.id });
 }

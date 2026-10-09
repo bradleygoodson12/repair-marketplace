@@ -1,9 +1,10 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
 import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
+import { notifyMatchingPros } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
@@ -62,6 +63,8 @@ export async function POST(req: Request) {
       },
     });
   });
+
+  after(() => notifyMatchingPros(request.id));
 
   return NextResponse.json({ id: request.id });
 }

@@ -1,8 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { sendNewMessageEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
 
   const request = await prisma.serviceRequest.findUnique({
     where: { id: requestId },
-    include: { quotes: { include: { proProfile: true } } },
+    include: { quotes: { include: { proProfile: { include: { user: true } } } } },
   });
   if (!request) return NextResponse.json({ error: 'Request not found.' }, { status: 404 });
 
@@ -38,6 +39,22 @@ export async function POST(req: Request) {
   const message = await prisma.message.create({
     data: { requestId, senderId: session.user.id, body },
   });
+
+  if (isCustomer) {
+    after(() =>
+      Promise.all(
+        request.quotes.map((q) =>
+          sendNewMessageEmail({
+            to: q.proProfile.user.email,
+            requestTitle: request.title,
+            senderName: session.user.name ?? 'The customer',
+            messageBody: body,
+            requestId: request.id,
+          }),
+        ),
+      ),
+    );
+  }
 
   return NextResponse.json({ id: message.id });
 }

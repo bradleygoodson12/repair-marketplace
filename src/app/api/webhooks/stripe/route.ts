@@ -1,7 +1,8 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import type Stripe from 'stripe';
 
+import { sendSubscriptionPastDueEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 
@@ -29,16 +30,29 @@ async function handleSubscriptionCheckout(checkoutSession: Stripe.Checkout.Sessi
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const proProfile = await prisma.proProfile.findFirst({ where: { stripeSubscriptionId: subscription.id } });
+  const proProfile = await prisma.proProfile.findFirst({
+    where: { stripeSubscriptionId: subscription.id },
+    include: { user: true },
+  });
   if (!proProfile) return;
+
+  const newStatus = subscriptionStatusFromStripe(subscription.status);
 
   await prisma.proProfile.update({
     where: { id: proProfile.id },
     data: {
-      subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
+      subscriptionStatus: newStatus,
       subscriptionCurrentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
     },
   });
+
+  // Only email on the transition into PAST_DUE, not on every webhook ping
+  // while it stays that way.
+  if (newStatus === 'PAST_DUE' && proProfile.subscriptionStatus !== 'PAST_DUE') {
+    after(() =>
+      sendSubscriptionPastDueEmail({ to: proProfile.user.email, businessName: proProfile.businessName }),
+    );
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
