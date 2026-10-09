@@ -71,7 +71,7 @@ migration — just populate those columns from the provider's response.
 ```bash
 npm install
 cp .env.example .env   # fill in DATABASE_URL, NEXTAUTH_SECRET, Stripe keys
-npm run db:push          # sync the Prisma schema to your database
+npm run db:migrate       # apply migrations to your database (prisma migrate dev)
 npm run db:seed          # seed categories + demo customer/pro accounts
 npm run dev
 ```
@@ -147,15 +147,39 @@ unaffected.
 
 ## Deploying (e.g. to Vercel)
 
-The `vercel-build` script (`prisma generate && prisma db push --accept-data-loss && tsx prisma/seed.ts && next build`)
-runs automatically on platforms like Vercel that look for it, so a deploy also syncs the schema and
-seeds categories/demo accounts with no extra manual step. You only need to set the environment
-variables from `.env.example` in the platform's dashboard.
+The `vercel-build` script (`prisma generate && prisma migrate deploy && tsx prisma/seed.ts && next build`)
+runs automatically on platforms like Vercel that look for it, so a deploy also applies any pending
+migrations and reseeds categories/demo accounts with no extra manual step. You only need to set the
+environment variables from `.env.example` in the platform's dashboard. Reseeding is safe to run on
+every deploy — `prisma/seed.ts` is all `upsert`s, so it never duplicates or overwrites real data.
 
-`db push --accept-data-loss` and reseeding on every deploy are fine for early development, but
-switch to `prisma migrate deploy` with real migration files (see `npm run db:migrate` locally)
-before this holds real user data — `db push` can silently drop columns/tables that no longer
-match the schema.
+### Schema changes
+
+This project uses real Prisma migrations (`prisma/migrations/`), not `db push`. To change the
+schema:
+
+1. Edit `prisma/schema.prisma`.
+2. Run `npm run db:migrate` (`prisma migrate dev`) locally — it generates a new timestamped SQL
+   file under `prisma/migrations/` and applies it to your local database.
+3. Commit the new migration folder along with the schema change.
+4. On deploy, `vercel-build` runs `prisma migrate deploy`, which applies any migrations the target
+   database doesn't have yet — in order, without prompting, and without the "reset if there's
+   drift" behavior `migrate dev` has. That's what makes it safe for a build step.
+
+**One-time step if you're migrating an existing database that was only ever managed with
+`db push`** (true the first time this project's production database picks up this change): its
+schema already matches `prisma/schema.prisma`, but it has no `_prisma_migrations` history table, so
+`migrate deploy` will try to run the baseline migration's `CREATE TABLE` statements against tables
+that already exist and fail. Mark the baseline as already applied once, before that deploy:
+
+```bash
+DATABASE_URL="<production-connection-string>" npx prisma migrate resolve --applied <baseline-migration-folder-name>
+```
+
+(`<baseline-migration-folder-name>` is the single folder currently under `prisma/migrations/`, e.g.
+`20261009000515_init`.) Run it from a machine that can reach the production database — Vercel's
+Postgres/Neon connection string, from **Settings → Environment Variables**. After that one-time
+command, every future deploy's `migrate deploy` just works.
 
 ## Project structure
 
