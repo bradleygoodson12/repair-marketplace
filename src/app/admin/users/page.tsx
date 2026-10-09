@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
       <div className="flex flex-col gap-2">
         {users.map((u) => (
           <Card key={u.id}>
-            <CardContent className="flex items-center justify-between">
+            <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-1 flex items-center gap-2">
                   <span className="font-semibold text-gray-900">{u.name}</span>

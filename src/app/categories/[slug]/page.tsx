@@ -55,7 +55,7 @@ export default async function CategoryDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {category.icon} {category.name}
@@ -63,7 +63,9 @@ export default async function CategoryDetailPage({
           <p className="mt-1 text-gray-600">{category.description}</p>
         </div>
         <Link href={`/request/new?category=${category.slug}`}>
-          <Button size="lg">Post a job in this category</Button>
+          <Button size="lg" className="w-fit">
+            Post a job in this category
+          </Button>
         </Link>
       </div>
 

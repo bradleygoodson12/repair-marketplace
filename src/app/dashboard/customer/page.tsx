@@ -22,9 +22,9 @@ export default async function CustomerDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Your requests</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/request/upload">
             <Button variant="outline">Upload a repair list</Button>
           </Link>
@@ -41,7 +41,7 @@ export default async function CustomerDashboardPage() {
           {requests.map((r) => (
             <Link key={r.id} href={`/requests/${r.id}`}>
               <Card className="transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
-                <CardContent className="flex items-center justify-between">
+                <CardContent className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">
                       <span className="text-sm text-gray-500">

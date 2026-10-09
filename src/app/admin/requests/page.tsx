@@ -20,7 +20,7 @@ export default async function AdminRequestsPage() {
       <div className="flex flex-col gap-2">
         {requests.map((r) => (
           <Card key={r.id}>
-            <CardContent className="flex items-center justify-between">
+            <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-1 flex items-center gap-2">
                   <Link href={`/requests/${r.id}`} className="font-semibold text-gray-900 hover:underline">
