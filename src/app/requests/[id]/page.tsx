@@ -124,7 +124,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.subscriptionStatus === 'ACTIVE' && (
+      {proProfile && !myQuote && !request.booking && proProfile.verified && proProfile.subscriptionStatus === 'ACTIVE' && (
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
@@ -133,7 +133,17 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </Card>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.subscriptionStatus !== 'ACTIVE' && (
+      {proProfile && !myQuote && !request.booking && !proProfile.verified && (
+        <Card className="mb-6">
+          <CardContent>
+            <p className="text-sm text-gray-600">
+              Your profile is still awaiting verification. You'll be able to submit quotes once it's reviewed.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {proProfile && !myQuote && !request.booking && proProfile.verified && proProfile.subscriptionStatus !== 'ACTIVE' && (
         <Card className="mb-6">
           <CardContent className="flex items-center justify-between gap-4">
             <p className="text-sm text-gray-600">

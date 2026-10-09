@@ -41,6 +41,31 @@ export default async function ProDashboardPage() {
     );
   }
 
+  if (!proProfile.verified) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-12">
+        <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{proProfile.businessName}</h1>
+          </div>
+          <Link href={`/pros/${proProfile.id}`} className="text-sm font-medium text-brand-600 hover:underline">
+            View public profile
+          </Link>
+        </div>
+        <Card>
+          <CardContent>
+            <h2 className="mb-2 text-lg font-bold text-gray-900">Your profile is awaiting verification</h2>
+            <p className="text-gray-600">
+              Thanks for signing up. Our team reviews every new pro profile before it goes live — once you're
+              verified, you'll get an email and can subscribe to start seeing job leads in your area. This usually
+              takes a day or two.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const categoryIds = proProfile.categories.map((c) => c.categoryId);
   const candidateLeads = await prisma.serviceRequest.findMany({
     where: {

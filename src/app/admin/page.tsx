@@ -15,15 +15,23 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default async function AdminOverviewPage() {
-  const [customerCount, proCount, requestCount, openRequestCount, bookingCount, activeSubscriptions] =
-    await Promise.all([
-      prisma.user.count({ where: { role: 'CUSTOMER' } }),
-      prisma.user.count({ where: { role: 'PRO' } }),
-      prisma.serviceRequest.count(),
-      prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
-      prisma.booking.count(),
-      prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
-    ]);
+  const [
+    customerCount,
+    proCount,
+    requestCount,
+    openRequestCount,
+    bookingCount,
+    activeSubscriptions,
+    pendingVerificationCount,
+  ] = await Promise.all([
+    prisma.user.count({ where: { role: 'CUSTOMER' } }),
+    prisma.user.count({ where: { role: 'PRO' } }),
+    prisma.serviceRequest.count(),
+    prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
+    prisma.booking.count(),
+    prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+    prisma.proProfile.count({ where: { verified: false } }),
+  ]);
 
   return (
     <div>
@@ -38,6 +46,7 @@ export default async function AdminOverviewPage() {
         <StatCard label="Total job requests" value={requestCount.toLocaleString()} />
         <StatCard label="Open requests" value={openRequestCount.toLocaleString()} />
         <StatCard label="Bookings" value={bookingCount.toLocaleString()} />
+        <StatCard label="Pending verification" value={pendingVerificationCount.toLocaleString()} />
         <StatCard label="Active subscriptions" value={activeSubscriptions.toLocaleString()} />
         <StatCard
           label="Subscription revenue (est/mo)"

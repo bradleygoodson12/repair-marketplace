@@ -16,6 +16,12 @@ export async function POST() {
   if (!proProfile) {
     return NextResponse.json({ error: 'Complete your pro profile first.' }, { status: 403 });
   }
+  if (!proProfile.verified) {
+    return NextResponse.json(
+      { error: 'Your profile must be verified before you can subscribe.' },
+      { status: 403 },
+    );
+  }
   if (proProfile.subscriptionStatus === 'ACTIVE') {
     return NextResponse.json({ error: 'You already have an active subscription.' }, { status: 409 });
   }

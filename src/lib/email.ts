@@ -117,3 +117,31 @@ export async function sendSubscriptionPastDueEmail(params: { to: string; busines
     ),
   );
 }
+
+export async function sendProVerifiedEmail(params: { to: string; businessName: string }) {
+  const url = `${origin()}/dashboard/pro`;
+  await sendEmail(
+    params.to,
+    "You're verified on Repair Bee",
+    layout(
+      "You're verified!",
+      `<p style="margin:0;">Your pro profile has been reviewed and verified. You can now subscribe to start seeing and quoting job leads in your area.</p>`,
+      url,
+      'Go to your dashboard',
+    ),
+  );
+}
+
+export async function sendNewProPendingEmail(params: { to: string; businessName: string }) {
+  const url = `${origin()}/admin/pros`;
+  await sendEmail(
+    params.to,
+    `New pro awaiting verification: ${params.businessName}`,
+    layout(
+      'A new pro profile needs review',
+      `<p style="margin:0;"><strong>${params.businessName}</strong> just created a pro profile and is waiting on verification before they can subscribe.</p>`,
+      url,
+      'Review pros',
+    ),
+  );
+}

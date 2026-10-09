@@ -22,6 +22,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!proProfile) {
     return NextResponse.json({ error: 'Complete your pro profile before quoting.' }, { status: 403 });
   }
+  if (!proProfile.verified) {
+    return NextResponse.json({ error: 'Your profile must be verified before you can submit quotes.' }, { status: 403 });
+  }
   if (proProfile.subscriptionStatus !== 'ACTIVE') {
     return NextResponse.json(
       { error: 'An active subscription is required to submit quotes. Subscribe from your dashboard.' },

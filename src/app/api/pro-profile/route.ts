@@ -1,8 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { sendNewProPendingEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
@@ -28,6 +29,8 @@ export async function POST(req: Request) {
 
   const { categoryIds, ...profileData } = parsed.data;
 
+  const existingProfile = await prisma.proProfile.findUnique({ where: { userId: session.user.id } });
+
   const profile = await prisma.proProfile.upsert({
     where: { userId: session.user.id },
     update: profileData,
@@ -38,6 +41,15 @@ export async function POST(req: Request) {
   await prisma.proProfileCategory.createMany({
     data: categoryIds.map((categoryId) => ({ proProfileId: profile.id, categoryId })),
   });
+
+  if (!existingProfile) {
+    after(async () => {
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
+      await Promise.all(
+        admins.map((admin) => sendNewProPendingEmail({ to: admin.email, businessName: profile.businessName })),
+      );
+    });
+  }
 
   return NextResponse.json({ id: profile.id });
 }
