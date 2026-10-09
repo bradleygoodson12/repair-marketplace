@@ -14,3 +14,18 @@ export function filenameFromUrl(url: string): string {
     return url;
   }
 }
+
+// Every URL we store as a request "attachment" is displayed back to other
+// users (pros viewing a request) as a clickable link or an auto-loading
+// <img>. Without this check, an API consumer could submit any URL — e.g. a
+// phishing page dressed up as "inspection-report.pdf" — since the only
+// validation otherwise is "is this syntactically a URL". Only accept files
+// our own /api/upload actually produced.
+export function isOwnBlobUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && /\.public\.blob\.vercel-storage\.com$/i.test(hostname);
+  } catch {
+    return false;
+  }
+}

@@ -8,6 +8,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!session) return NextResponse.json({ error: 'Not authorized.' }, { status: 403 });
 
   const { id } = await params;
-  await prisma.serviceRequest.update({ where: { id }, data: { status: 'CANCELLED' } });
+  const { count } = await prisma.serviceRequest.updateMany({ where: { id }, data: { status: 'CANCELLED' } });
+  if (count === 0) return NextResponse.json({ error: 'Request not found.' }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

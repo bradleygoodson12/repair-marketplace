@@ -14,6 +14,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  await prisma.proProfile.update({ where: { id }, data: { verified: parsed.data.verified } });
+  const { count } = await prisma.proProfile.updateMany({ where: { id }, data: { verified: parsed.data.verified } });
+  if (count === 0) return NextResponse.json({ error: 'Pro not found.' }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

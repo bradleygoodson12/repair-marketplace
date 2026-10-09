@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -22,7 +23,7 @@ const schema = z.object({
       }),
     )
     .min(1),
-  supportingDocumentUrls: z.array(z.string().url()).default([]),
+  supportingDocumentUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).default([]),
   // Applies uniformly to every request created from this batch — asking for
   // these per item would undo the point of reviewing a long list quickly.
   budgetMinCents: z.number().int().positive().nullable().optional(),
@@ -53,6 +54,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const validLineItemIds = new Set(document.lineItems.map((li) => li.id));
   if (items.some((i) => !validLineItemIds.has(i.id))) {
     return NextResponse.json({ error: 'One or more items do not belong to this document.' }, { status: 400 });
+  }
+
+  const categoryIds = new Set(items.map((i) => i.categoryId));
+  const validCategoryCount = await prisma.category.count({ where: { id: { in: [...categoryIds] } } });
+  if (validCategoryCount !== categoryIds.size) {
+    return NextResponse.json({ error: 'One or more items have an invalid category.' }, { status: 400 });
   }
 
   // Every request gets the full source material — the analyzed list plus

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -12,7 +13,7 @@ const schema = z.object({
   budgetMinCents: z.number().int().nonnegative().nullable().optional(),
   budgetMaxCents: z.number().int().nonnegative().nullable().optional(),
   preferredDate: z.string().nullable().optional(),
-  photoUrls: z.array(z.string().url()).max(5).optional(),
+  photoUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
   property: z.object({
     addressLine1: z.string().min(1),
     addressLine2: z.string().optional(),
@@ -37,22 +38,29 @@ export async function POST(req: Request) {
   const { categoryId, title, description, budgetMinCents, budgetMaxCents, preferredDate, photoUrls, property } =
     parsed.data;
 
-  const createdProperty = await prisma.property.create({
-    data: { ownerId: session.user.id, ...property },
-  });
+  const category = await prisma.category.findUnique({ where: { id: categoryId } });
+  if (!category) {
+    return NextResponse.json({ error: 'Not a valid service category.' }, { status: 400 });
+  }
 
-  const request = await prisma.serviceRequest.create({
-    data: {
-      customerId: session.user.id,
-      propertyId: createdProperty.id,
-      categoryId,
-      title,
-      description,
-      budgetMinCents: budgetMinCents ?? null,
-      budgetMaxCents: budgetMaxCents ?? null,
-      preferredDate: preferredDate ? new Date(preferredDate) : null,
-      photoUrls: photoUrls ?? [],
-    },
+  const request = await prisma.$transaction(async (tx) => {
+    const createdProperty = await tx.property.create({
+      data: { ownerId: session.user.id, ...property },
+    });
+
+    return tx.serviceRequest.create({
+      data: {
+        customerId: session.user.id,
+        propertyId: createdProperty.id,
+        categoryId,
+        title,
+        description,
+        budgetMinCents: budgetMinCents ?? null,
+        budgetMaxCents: budgetMaxCents ?? null,
+        preferredDate: preferredDate ? new Date(preferredDate) : null,
+        photoUrls: photoUrls ?? [],
+      },
+    });
   });
 
   return NextResponse.json({ id: request.id });

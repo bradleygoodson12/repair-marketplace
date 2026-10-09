@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
+import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
 import { prisma } from '@/lib/prisma';
@@ -13,10 +14,12 @@ import { prisma } from '@/lib/prisma';
 // review page polls for READY/FAILED instead.
 export const maxDuration = 60;
 
+const blobUrl = z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.');
+
 const schema = z.object({
-  fileUrl: z.string().url(),
+  fileUrl: blobUrl,
   filename: z.string().min(1),
-  supportingDocumentUrls: z.array(z.string().url()).default([]),
+  supportingDocumentUrls: z.array(blobUrl).default([]),
 });
 
 export async function POST(req: Request) {
