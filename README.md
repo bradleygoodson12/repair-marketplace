@@ -85,10 +85,10 @@ drafted by Claude, not a lawyer, and must be reviewed by a licensed attorney in 
 before you launch or rely on them.** What they get right: an accurate, specific description of how
 Repair Bee actually works — the direct-pay model, what "Verified" does and doesn't mean, which
 third parties (Stripe, Vercel, Anthropic, Resend) see what data, and the AI-document-processing
-disclosure. What they don't have: your actual legal entity name, business address, or governing
-state — each page has a `const` block at the top with bracketed placeholders (e.g.
-`LEGAL_ENTITY_NAME`) to fill in, plus a `[DATE]` placeholder for "Last updated" to set once this is
-actually reviewed and published.
+disclosure. The `const` block at the top of each page now has the real contracting party (Bradley
+Goodson, operating as a sole proprietor — not yet a formed LLC/corp) and governing state (South
+Carolina). The `lastUpdated` prop on each page is still a `[DATE]` placeholder on purpose — set it
+once these are actually reviewed and published, not before.
 
 Also worth knowing: the homepage/meta copy used to say pros are "vetted & background-checked."
 There's no actual background-check process — only an admin-togglable `ProProfile.verified` flag —

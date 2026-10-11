@@ -2,11 +2,9 @@ import { LegalPage } from '@/components/legal-page';
 
 export const metadata = { title: 'Terms of Service | Repair Bee' };
 
-// Fill these in before this page is relied on for real — see the draft
-// notice in README's Legal section.
-const LEGAL_ENTITY_NAME = '[Your Company Legal Name, e.g. Repair Bee LLC]';
-const GOVERNING_STATE = '[Governing State, e.g. Texas]';
-const CONTACT_EMAIL = 'legal@repairbee.com';
+const LEGAL_ENTITY_NAME = 'Bradley Goodson';
+const GOVERNING_STATE = 'South Carolina';
+const CONTACT_EMAIL = 'legal@repairbee.io';
 
 export default function TermsPage() {
   return (

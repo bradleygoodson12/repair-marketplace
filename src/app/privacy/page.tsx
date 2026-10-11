@@ -2,8 +2,8 @@ import { LegalPage } from '@/components/legal-page';
 
 export const metadata = { title: 'Privacy Policy | Repair Bee' };
 
-const LEGAL_ENTITY_NAME = '[Your Company Legal Name, e.g. Repair Bee LLC]';
-const CONTACT_EMAIL = 'privacy@repairbee.com';
+const LEGAL_ENTITY_NAME = 'Bradley Goodson';
+const CONTACT_EMAIL = 'privacy@repairbee.io';
 
 export default function PrivacyPage() {
   return (
