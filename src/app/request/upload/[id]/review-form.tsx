@@ -206,6 +206,7 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
                       value={item.photoUrls}
                       onChange={(urls) => updateItem(item.id, { photoUrls: urls })}
                       max={5}
+                      preferCamera
                     />
                   </div>
                 </div>

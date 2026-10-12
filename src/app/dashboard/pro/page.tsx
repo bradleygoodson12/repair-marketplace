@@ -2,15 +2,15 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
 import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
-import { formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
+import { LeadCard } from './lead-card';
 import { ProProfileForm } from './profile-form';
+import { QuoteDefaultsForm } from './quote-defaults-form';
 import { SubscriptionCard } from './subscription-card';
 
 export default async function ProDashboardPage() {
@@ -109,6 +109,11 @@ export default async function ProDashboardPage() {
         subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
       />
 
+      <QuoteDefaultsForm
+        initialMessage={proProfile.defaultQuoteMessage}
+        initialDurationDays={proProfile.defaultDurationDays}
+      />
+
       <h2 className="mb-4 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
@@ -119,34 +124,14 @@ export default async function ProDashboardPage() {
       ) : (
         <div className="mb-8 flex flex-col gap-3">
           {leads.map(({ request: r, distance }) => (
-            <Link key={r.id} href={`/requests/${r.id}`}>
-              <Card className="transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
-                <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-sm text-gray-500">
-                        {r.category.icon} {r.category.name}
-                      </span>
-                      <Badge status={r.status} />
-                      {quotedRequestIds.has(r.id) && (
-                        <span className="text-xs font-medium text-brand-600">You quoted</span>
-                      )}
-                    </div>
-                    <p className="font-semibold text-gray-900">{r.title}</p>
-                    <p className="text-sm text-gray-500">
-                      {r.property.city}, {r.property.state} {r.property.zip}
-                      {distance !== null && ` · ${distance.toFixed(1)} mi away`}
-                    </p>
-                  </div>
-                  {(r.budgetMinCents || r.budgetMaxCents) && (
-                    <span className="text-sm text-gray-600">
-                      {r.budgetMinCents ? formatCents(r.budgetMinCents) : '—'}–
-                      {r.budgetMaxCents ? formatCents(r.budgetMaxCents) : '—'}
-                    </span>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
+            <LeadCard
+              key={r.id}
+              request={r}
+              distance={distance}
+              alreadyQuoted={quotedRequestIds.has(r.id)}
+              defaultMessage={proProfile.defaultQuoteMessage}
+              defaultDurationDays={proProfile.defaultDurationDays}
+            />
           ))}
         </div>
       )}

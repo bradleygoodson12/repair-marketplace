@@ -1,16 +1,25 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 
-export function QuoteForm({ requestId }: { requestId: string }) {
+export function QuoteForm({
+  requestId,
+  defaultMessage,
+  defaultDurationDays,
+}: {
+  requestId: string;
+  defaultMessage?: string | null;
+  defaultDurationDays?: number | null;
+}) {
   const router = useRouter();
   const [priceDollars, setPriceDollars] = useState('');
-  const [message, setMessage] = useState('');
-  const [durationDays, setDurationDays] = useState('');
+  const [message, setMessage] = useState(defaultMessage ?? '');
+  const [durationDays, setDurationDays] = useState(defaultDurationDays?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +69,15 @@ export function QuoteForm({ requestId }: { requestId: string }) {
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Message to customer</label>
         <Textarea required rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
+        {defaultMessage && (
+          <p className="mt-1 text-xs text-gray-400">
+            Pre-filled from your quote defaults — edit it for this job, or{' '}
+            <Link href="/dashboard/pro" className="underline hover:text-gray-600">
+              update your default
+            </Link>
+            .
+          </p>
+        )}
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>

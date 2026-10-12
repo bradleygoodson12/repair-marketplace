@@ -190,3 +190,54 @@ If the document clearly states a property address, include it; otherwise omit th
     propertyZip: parsed.data.propertyZip,
   };
 }
+
+/**
+ * Suggests the best-matching contractor category for a single job post's
+ * title/description, for the customer who isn't sure which trade handles
+ * their issue. The result is a suggestion the customer can still override —
+ * never applied without their review.
+ */
+export async function suggestCategoryForJob(
+  title: string,
+  description: string,
+  categories: { slug: string; name: string }[],
+): Promise<string> {
+  const categoryList = categories.map((c) => `- ${c.slug}: ${c.name}`).join('\n');
+
+  const message = await anthropic.messages.create({
+    model: REPAIR_EXTRACTION_MODEL,
+    max_tokens: 200,
+    tools: [
+      {
+        name: 'suggest_category',
+        description: 'Pick the single best-matching contractor category for this job.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            categorySlug: { type: 'string', description: 'The single best-matching category slug from the provided list' },
+          },
+          required: ['categorySlug'],
+        },
+      },
+    ],
+    tool_choice: { type: 'tool', name: 'suggest_category' },
+    messages: [
+      {
+        role: 'user',
+        content: `A homeowner is posting this repair job:\n\nTitle: ${title}\nDescription: ${description}\n\nPick the single best-matching category slug from this list (use "handyman" only if nothing else fits):\n${categoryList}`,
+      },
+    ],
+  });
+
+  const toolUseBlock = message.content.find((block) => block.type === 'tool_use');
+  if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
+    throw new Error('Claude did not return a category suggestion.');
+  }
+
+  const parsed = z.object({ categorySlug: z.string() }).safeParse(toolUseBlock.input);
+  if (!parsed.success) {
+    throw new Error('Claude returned an unexpected shape for the category suggestion.');
+  }
+
+  return parsed.data.categorySlug;
+}

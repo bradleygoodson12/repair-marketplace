@@ -8,11 +8,15 @@ interface MultiFileUploaderProps {
   value: string[];
   onChange: (urls: string[]) => void;
   max?: number;
+  // Hints mobile browsers to offer the camera directly — only makes sense
+  // when this instance is mainly for snapping a new photo, not browsing to
+  // an existing file (e.g. a report someone already has saved).
+  preferCamera?: boolean;
 }
 
 const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/png,image/webp,image/gif';
 
-export function MultiFileUploader({ value, onChange, max = 10 }: MultiFileUploaderProps) {
+export function MultiFileUploader({ value, onChange, max = 10, preferCamera = false }: MultiFileUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +63,7 @@ export function MultiFileUploader({ value, onChange, max = 10 }: MultiFileUpload
             <input
               type="file"
               accept={ACCEPTED_TYPES}
+              capture={preferCamera ? 'environment' : undefined}
               multiple
               className="hidden"
               disabled={uploading}

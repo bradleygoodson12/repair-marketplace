@@ -11,6 +11,7 @@ import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 import { CompleteButton } from './complete-button';
+import { MessagePoller } from './message-poller';
 import { MessageThread } from './message-thread';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
@@ -128,7 +129,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
-            <QuoteForm requestId={request.id} />
+            <QuoteForm
+              requestId={request.id}
+              defaultMessage={proProfile.defaultQuoteMessage}
+              defaultDurationDays={proProfile.defaultDurationDays}
+            />
           </CardContent>
         </Card>
       )}
@@ -159,6 +164,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
       {(isCustomer || myQuote) && (
         <Card>
           <CardContent>
+            <MessagePoller />
             <h2 className="mb-3 font-bold text-gray-900">Messages</h2>
             <MessageThread requestId={request.id} messages={request.messages} currentUserId={session.user.id} />
           </CardContent>

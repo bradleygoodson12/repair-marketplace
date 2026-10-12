@@ -1,14 +1,25 @@
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
 import { Suspense } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { RequestForm } from './request-form';
 
-export const revalidate = 3600;
-
 export default async function NewRequestPage() {
-  const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
+  const session = await getServerSession(authOptions);
+  const [categories, savedProperties] = await Promise.all([
+    prisma.category.findMany({ orderBy: { name: 'asc' } }),
+    session?.user
+      ? prisma.property.findMany({
+          where: { ownerId: session.user.id },
+          orderBy: { createdAt: 'desc' },
+          distinct: ['addressLine1', 'city', 'state', 'zip'],
+          take: 5,
+        })
+      : [],
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -21,7 +32,7 @@ export default async function NewRequestPage() {
       <Card>
         <CardContent>
           <Suspense>
-            <RequestForm categories={categories} />
+            <RequestForm categories={categories} savedProperties={savedProperties} />
           </Suspense>
         </CardContent>
       </Card>

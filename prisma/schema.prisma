@@ -124,6 +124,12 @@ model ProProfile {
   stripeSubscriptionId String?
   subscriptionStatus   SubscriptionStatus @default(NONE)
   subscriptionCurrentPeriodEnd DateTime?
+  // Pre-fill the quote form so quoting a lead doesn't start from a blank
+  // slate every time. Price is deliberately not defaulted here — it varies
+  // too much job to job, and a stale default is the one field that could
+  // silently send a wrong number.
+  defaultQuoteMessage  String?  @db.Text
+  defaultDurationDays  Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

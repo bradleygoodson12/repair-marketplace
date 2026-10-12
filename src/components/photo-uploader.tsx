@@ -67,6 +67,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              capture="environment"
               multiple
               className="hidden"
               disabled={uploading}
