@@ -7,6 +7,8 @@ import { authOptions } from '@/lib/auth';
 import { notifyMatchingPros } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
 
+const blobUrl = z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.');
+
 const schema = z.object({
   property: z.object({
     addressLine1: z.string().min(1),
@@ -21,10 +23,11 @@ const schema = z.object({
         title: z.string().min(1),
         description: z.string().min(1),
         categoryId: z.string().min(1),
+        photoUrls: z.array(blobUrl).max(5).default([]),
       }),
     )
     .min(1),
-  supportingDocumentUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).default([]),
+  supportingDocumentUrls: z.array(blobUrl).default([]),
   // Applies uniformly to every request created from this batch — asking for
   // these per item would undo the point of reviewing a long list quickly.
   budgetMinCents: z.number().int().positive().nullable().optional(),
@@ -77,6 +80,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   await prisma.$transaction(async (tx) => {
     for (const item of items) {
+      // The item's own photos come first so they're what a pro sees before
+      // the shared full-report attachments further down the list.
+      const requestPhotoUrls = [...new Set([...item.photoUrls, ...attachmentUrls])];
       const request = await tx.serviceRequest.create({
         data: {
           customerId: session.user.id,
@@ -84,7 +90,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           categoryId: item.categoryId,
           title: item.title,
           description: item.description,
-          photoUrls: attachmentUrls,
+          photoUrls: requestPhotoUrls,
           sourcePageNumber: pageNumberById.get(item.id) ?? null,
           budgetMinCents: budgetMinCents ?? null,
           budgetMaxCents: budgetMaxCents ?? null,
@@ -93,7 +99,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
       await tx.repairLineItem.update({
         where: { id: item.id },
-        data: { categoryId: item.categoryId, title: item.title, description: item.description, serviceRequestId: request.id },
+        data: {
+          categoryId: item.categoryId,
+          title: item.title,
+          description: item.description,
+          photoUrls: item.photoUrls,
+          serviceRequestId: request.id,
+        },
       });
       created.push({ id: request.id, title: request.title });
     }

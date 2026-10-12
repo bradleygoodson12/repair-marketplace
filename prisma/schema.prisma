@@ -323,6 +323,9 @@ model RepairLineItem {
   categoryId       String?
   pageNumber       Int?
   selected         Boolean  @default(true)
+  // Customer-uploaded photos specific to this repair item, set during review
+  // (separate from the whole-document attachments every request also gets).
+  photoUrls        String[] @default([])
   serviceRequestId String?  @unique
   createdAt        DateTime @default(now())
 

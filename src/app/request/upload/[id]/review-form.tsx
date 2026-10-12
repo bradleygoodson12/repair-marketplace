@@ -33,6 +33,7 @@ interface ItemState {
   description: string;
   categoryId: string;
   selected: boolean;
+  photoUrls: string[];
 }
 
 export function ReviewForm({ document, categories }: { document: DocumentProp; categories: CategoryOption[] }) {
@@ -47,6 +48,7 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
       description: item.description,
       categoryId: item.categoryId ?? item.suggestedCategoryId ?? categories[0]?.id ?? '',
       selected: item.selected,
+      photoUrls: item.photoUrls,
     })),
   );
   const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>(document.supportingDocumentUrls);
@@ -87,7 +89,13 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         property: { addressLine1, city, state, zip },
-        items: selectedItems.map((i) => ({ id: i.id, title: i.title, description: i.description, categoryId: i.categoryId })),
+        items: selectedItems.map((i) => ({
+          id: i.id,
+          title: i.title,
+          description: i.description,
+          categoryId: i.categoryId,
+          photoUrls: i.photoUrls,
+        })),
         supportingDocumentUrls,
         budgetMinCents: budgetMin ? Math.round(parseFloat(budgetMin) * 100) : null,
         budgetMaxCents: budgetMax ? Math.round(parseFloat(budgetMax) * 100) : null,
@@ -190,6 +198,16 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
                       ))}
                     </Select>
                   </div>
+                  <div className="mt-3">
+                    <label className="mb-1 block text-xs font-medium text-gray-500">
+                      Photo of this item (optional)
+                    </label>
+                    <MultiFileUploader
+                      value={item.photoUrls}
+                      onChange={(urls) => updateItem(item.id, { photoUrls: urls })}
+                      max={5}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -222,9 +240,10 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
 
       <Card>
         <CardContent>
-          <h2 className="mb-1 font-semibold text-gray-900">4. Upload report & pictures</h2>
+          <h2 className="mb-1 font-semibold text-gray-900">4. Full report & any other documents</h2>
           <p className="mb-3 text-sm text-gray-500">
-            These are attached in full to every request below, so pros can review the source themselves.
+            Attached in full to every request below, so a pro can open the original report themselves — useful if
+            it has photos or context beyond what you added per item above. Optional.
           </p>
           <div className="mb-3 flex flex-wrap gap-3">
             <AttachmentThumb url={document.fileUrl} />
