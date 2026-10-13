@@ -1,6 +1,8 @@
+import Link from 'next/link';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
-import { formatCents } from '@/lib/utils';
+import { formatDate, formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -15,6 +17,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default async function AdminOverviewPage() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   const [
     customerCount,
     proCount,
@@ -24,6 +28,9 @@ export default async function AdminOverviewPage() {
     activeSubscriptions,
     pendingVerificationCount,
     openReportCount,
+    newSignupsThisWeek,
+    recentUsers,
+    recentRequests,
   ] = await Promise.all([
     prisma.user.count({ where: { role: 'CUSTOMER' } }),
     prisma.user.count({ where: { role: 'PRO' } }),
@@ -33,6 +40,13 @@ export default async function AdminOverviewPage() {
     prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
     prisma.proProfile.count({ where: { verified: false } }),
     prisma.report.count({ where: { status: 'OPEN' } }),
+    prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.user.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+    prisma.serviceRequest.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { category: true, customer: true },
+    }),
   ]);
 
   return (
@@ -55,6 +69,59 @@ export default async function AdminOverviewPage() {
           label="Subscription revenue (est/mo)"
           value={formatCents(activeSubscriptions * SUBSCRIPTION_PRICE_CENTS)}
         />
+        <StatCard label="New signups (7d)" value={newSignupsThisWeek.toLocaleString()} />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <h3 className="mb-3 font-semibold text-gray-900">Recent signups</h3>
+          <Card>
+            <CardContent className="flex flex-col gap-3">
+              {recentUsers.length === 0 ? (
+                <p className="text-sm text-gray-500">No signups yet.</p>
+              ) : (
+                recentUsers.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-900">
+                      {u.name} <span className="text-gray-400">({u.role.toLowerCase()})</span>
+                    </span>
+                    <span className="text-gray-400">{formatDate(u.createdAt)}</span>
+                  </div>
+                ))
+              )}
+              <Link href="/admin/users" className="text-xs font-medium text-brand-600 hover:underline">
+                View all users
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <h3 className="mb-3 font-semibold text-gray-900">Recent job posts</h3>
+          <Card>
+            <CardContent className="flex flex-col gap-3">
+              {recentRequests.length === 0 ? (
+                <p className="text-sm text-gray-500">No job posts yet.</p>
+              ) : (
+                recentRequests.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/requests/${r.id}`}
+                    className="flex items-center justify-between text-sm hover:text-brand-700"
+                  >
+                    <span className="truncate text-gray-900">
+                      {r.category.icon} {r.title}
+                    </span>
+                    <span className="flex-shrink-0 text-gray-400">{formatDate(r.createdAt)}</span>
+                  </Link>
+                ))
+              )}
+              <Link href="/admin/requests" className="text-xs font-medium text-brand-600 hover:underline">
+                View all listings
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

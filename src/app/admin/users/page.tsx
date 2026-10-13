@@ -28,7 +28,19 @@ export default async function AdminUsersPage() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500">
-                  {u.email} · joined {formatDate(u.createdAt)}
+                  <a href={`mailto:${u.email}`} className="hover:text-brand-700 hover:underline">
+                    {u.email}
+                  </a>
+                  {u.phone && (
+                    <>
+                      {' · '}
+                      <a href={`tel:${u.phone}`} className="hover:text-brand-700 hover:underline">
+                        {u.phone}
+                      </a>
+                    </>
+                  )}
+                  {' · joined '}
+                  {formatDate(u.createdAt)}
                 </p>
               </div>
               {u.id !== session?.user.id && <SuspendButton userId={u.id} suspended={u.suspended} />}

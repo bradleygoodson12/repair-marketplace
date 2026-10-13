@@ -31,7 +31,20 @@ export default async function AdminProsPage() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500">
-                  {pro.user.email} · {pro.serviceZip} · {pro.categories.map((c) => c.category.name).join(', ')}
+                  <a href={`mailto:${pro.user.email}`} className="hover:text-brand-700 hover:underline">
+                    {pro.user.email}
+                  </a>
+                  {pro.user.phone && (
+                    <>
+                      {' · '}
+                      <a href={`tel:${pro.user.phone}`} className="hover:text-brand-700 hover:underline">
+                        {pro.user.phone}
+                      </a>
+                    </>
+                  )}
+                  {' · '}
+                  {pro.serviceZip} · {pro.categories.map((c) => c.category.name).join(', ')}
+                  {pro.licenseNumber && <> · License #{pro.licenseNumber}</>}
                 </p>
                 <div className="mt-1">
                   <StarRating rating={pro.avgRating} count={pro.reviewCount} />
