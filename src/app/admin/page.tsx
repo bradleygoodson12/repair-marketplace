@@ -23,6 +23,7 @@ export default async function AdminOverviewPage() {
     bookingCount,
     activeSubscriptions,
     pendingVerificationCount,
+    openReportCount,
   ] = await Promise.all([
     prisma.user.count({ where: { role: 'CUSTOMER' } }),
     prisma.user.count({ where: { role: 'PRO' } }),
@@ -31,6 +32,7 @@ export default async function AdminOverviewPage() {
     prisma.booking.count(),
     prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
     prisma.proProfile.count({ where: { verified: false } }),
+    prisma.report.count({ where: { status: 'OPEN' } }),
   ]);
 
   return (
@@ -47,6 +49,7 @@ export default async function AdminOverviewPage() {
         <StatCard label="Open requests" value={openRequestCount.toLocaleString()} />
         <StatCard label="Bookings" value={bookingCount.toLocaleString()} />
         <StatCard label="Pending verification" value={pendingVerificationCount.toLocaleString()} />
+        <StatCard label="Open reports" value={openReportCount.toLocaleString()} />
         <StatCard label="Active subscriptions" value={activeSubscriptions.toLocaleString()} />
         <StatCard
           label="Subscription revenue (est/mo)"

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
 
 import { AttachmentThumb } from '@/components/attachment-thumb';
+import { ReportButton } from '@/components/report-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,6 +67,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             {request.property.zip}
           </p>
         </div>
+        {!isCustomer && <ReportButton targetRequestId={request.id} label="Report this job" />}
       </div>
 
       <Card className="mb-6">

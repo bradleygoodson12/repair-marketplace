@@ -71,6 +71,8 @@ model User {
   sentMessages  Message[]
   reviewsWritten Review[]        @relation("ReviewsWritten")
   repairDocuments RepairDocument[]
+  reportsFiled    Report[]       @relation("ReportsFiled")
+  reportsReceived Report[]       @relation("ReportsReceived")
 
   @@index([email])
 }
@@ -246,6 +248,7 @@ model ServiceRequest {
   booking  Booking?
   messages Message[]
   repairLineItem RepairLineItem?
+  reports  Report[]
 
   @@index([customerId])
   @@index([categoryId])
@@ -381,4 +384,40 @@ model RateLimitHit {
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  FRAUD
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// A user- or request-level flag for admin review. At least one of
+// targetUserId/targetRequestId is set — enforced in the API route, not the
+// schema, since Prisma doesn't support a DB-level "at least one of" check.
+model Report {
+  id              String       @id @default(cuid())
+  reporterId      String
+  targetUserId    String?
+  targetRequestId String?
+  reason          ReportReason
+  details         String?      @db.Text
+  status          ReportStatus @default(OPEN)
+  createdAt       DateTime     @default(now())
+  resolvedAt      DateTime?
+
+  reporter      User            @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUser    User?           @relation("ReportsReceived", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetRequest ServiceRequest? @relation(fields: [targetRequestId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([targetUserId])
+  @@index([targetRequestId])
 }

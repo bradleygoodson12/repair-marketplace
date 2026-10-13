@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
 import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ReportButton } from '@/components/report-button';
 import { StarRating } from '@/components/star-rating';
+import { authOptions } from '@/lib/auth';
 import { siteUrl } from '@/lib/site';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
@@ -34,6 +37,8 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
   });
 
   if (!pro) notFound();
+
+  const session = await getServerSession(authOptions);
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -114,6 +119,12 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
           </div>
         </CardContent>
       </Card>
+
+      {session?.user && (
+        <div className="mb-6 flex justify-end">
+          <ReportButton targetUserId={pro.userId} label="Report this pro" />
+        </div>
+      )}
 
       <h2 className="mb-4 text-lg font-bold text-gray-900">Reviews</h2>
       {pro.reviews.length === 0 ? (
