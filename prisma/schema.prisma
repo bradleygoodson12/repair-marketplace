@@ -130,6 +130,11 @@ model ProProfile {
   // silently send a wrong number.
   defaultQuoteMessage  String?  @db.Text
   defaultDurationDays  Int?
+  // Business photo shown on the public pro profile — distinct from the
+  // underlying User's own account photo, since a pro's storefront image
+  // isn't necessarily a headshot.
+  photoUrl          String?
+  licenseNumber     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -137,8 +142,28 @@ model ProProfile {
   categories ProProfileCategory[]
   quotes     Quote[]
   reviews    Review[]            @relation("ReviewsReceived")
+  quickQuoteTemplates QuickQuoteTemplate[]
 
   @@index([serviceZip])
+}
+
+// A pro's saved presets for commonly-requested jobs (e.g. "Faucet
+// replacement — $150, 1 day") so quoting a familiar job is picking from a
+// list instead of retyping the same numbers. Distinct from
+// defaultQuoteMessage/defaultDurationDays, which is a single always-on
+// fallback — these are named, swappable-in options.
+model QuickQuoteTemplate {
+  id           String   @id @default(cuid())
+  proProfileId String
+  label        String
+  priceCents   Int
+  durationDays Int?
+  message      String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  proProfile ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+
+  @@index([proProfileId])
 }
 
 model Category {

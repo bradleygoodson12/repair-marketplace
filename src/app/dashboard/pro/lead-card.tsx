@@ -9,6 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCents } from '@/lib/utils';
 
+interface QuickQuoteTemplate {
+  id: string;
+  label: string;
+  priceCents: number;
+  durationDays: number | null;
+  message: string | null;
+}
+
 interface LeadCardProps {
   request: {
     id: string;
@@ -23,6 +31,7 @@ interface LeadCardProps {
   alreadyQuoted: boolean;
   defaultMessage: string | null;
   defaultDurationDays: number | null;
+  templates?: QuickQuoteTemplate[];
 }
 
 // Quoting used to require leaving the dashboard for each lead's full page.
@@ -30,7 +39,14 @@ interface LeadCardProps {
 // endpoint — while the title/location still link out to the full request
 // (photos, full description, messaging) for anyone who wants more context
 // before committing to a price.
-export function LeadCard({ request, distance, alreadyQuoted, defaultMessage, defaultDurationDays }: LeadCardProps) {
+export function LeadCard({
+  request,
+  distance,
+  alreadyQuoted,
+  defaultMessage,
+  defaultDurationDays,
+  templates,
+}: LeadCardProps) {
   const [quoting, setQuoting] = useState(false);
 
   return (
@@ -67,7 +83,12 @@ export function LeadCard({ request, distance, alreadyQuoted, defaultMessage, def
         </div>
         {quoting && (
           <div className="border-t border-gray-100 pt-3">
-            <QuoteForm requestId={request.id} defaultMessage={defaultMessage} defaultDurationDays={defaultDurationDays} />
+            <QuoteForm
+              requestId={request.id}
+              defaultMessage={defaultMessage}
+              defaultDurationDays={defaultDurationDays}
+              templates={templates}
+            />
           </div>
         )}
       </CardContent>

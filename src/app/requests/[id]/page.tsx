@@ -38,7 +38,12 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
   const isCustomer = request.customerId === session.user.id;
   const proProfile =
-    session.user.role === 'PRO' ? await prisma.proProfile.findUnique({ where: { userId: session.user.id } }) : null;
+    session.user.role === 'PRO'
+      ? await prisma.proProfile.findUnique({
+          where: { userId: session.user.id },
+          include: { quickQuoteTemplates: { orderBy: { createdAt: 'asc' } } },
+        })
+      : null;
   const myQuote = proProfile ? request.quotes.find((q) => q.proProfileId === proProfile.id) : null;
   const isParticipant =
     isCustomer || request.quotes.some((q) => q.proProfile.userId === session.user.id);
@@ -85,6 +90,25 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             )}
             {request.preferredDate && <span>Preferred date: {formatDate(request.preferredDate)}</span>}
           </div>
+          {!isCustomer && myQuote && (
+            <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
+              {request.customer.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={request.customer.image} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-600">
+                  {request.customer.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <div className="text-sm">
+                <p className="font-medium text-gray-900">{request.customer.name}</p>
+                <p className="text-gray-500">
+                  {request.customer.email}
+                  {request.customer.phone && <> · {request.customer.phone}</>}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -133,6 +157,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               requestId={request.id}
               defaultMessage={proProfile.defaultQuoteMessage}
               defaultDurationDays={proProfile.defaultDurationDays}
+              templates={proProfile.quickQuoteTemplates}
             />
           </CardContent>
         </Card>

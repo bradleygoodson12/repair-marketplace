@@ -5,16 +5,26 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input, Textarea } from '@/components/ui/input';
+import { Input, Select, Textarea } from '@/components/ui/input';
+
+interface QuickQuoteTemplate {
+  id: string;
+  label: string;
+  priceCents: number;
+  durationDays: number | null;
+  message: string | null;
+}
 
 export function QuoteForm({
   requestId,
   defaultMessage,
   defaultDurationDays,
+  templates = [],
 }: {
   requestId: string;
   defaultMessage?: string | null;
   defaultDurationDays?: number | null;
+  templates?: QuickQuoteTemplate[];
 }) {
   const router = useRouter();
   const [priceDollars, setPriceDollars] = useState('');
@@ -22,6 +32,14 @@ export function QuoteForm({
   const [durationDays, setDurationDays] = useState(defaultDurationDays?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function applyTemplate(templateId: string) {
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+    setPriceDollars((template.priceCents / 100).toString());
+    setDurationDays(template.durationDays?.toString() ?? '');
+    setMessage(template.message ?? defaultMessage ?? '');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,6 +69,19 @@ export function QuoteForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      {templates.length > 0 && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Use a quick-quote template</label>
+          <Select defaultValue="" onChange={(e) => e.target.value && applyTemplate(e.target.value)}>
+            <option value="">Choose one to fill the form below…</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label} — ${(t.priceCents / 100).toFixed(2)}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Your price ($)</label>
         <Input

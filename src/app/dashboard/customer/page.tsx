@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
+import { AccountProfileForm } from '@/components/account-profile-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,17 +15,20 @@ export default async function CustomerDashboardPage() {
   if (session.user.role === 'ADMIN') redirect('/admin');
   if (session.user.role !== 'CUSTOMER') redirect('/dashboard/pro');
 
-  const requests = await prisma.serviceRequest.findMany({
-    where: { customerId: session.user.id },
-    include: { category: true, quotes: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  const [user, requests] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
+    prisma.serviceRequest.findMany({
+      where: { customerId: session.user.id },
+      include: { category: true, quotes: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Your requests</h1>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/request/upload">
             <Button variant="outline">Upload a repair list</Button>
           </Link>
@@ -32,6 +36,10 @@ export default async function CustomerDashboardPage() {
             <Button>Post a new job</Button>
           </Link>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <AccountProfileForm email={user.email} initialImage={user.image} initialPhone={user.phone} />
       </div>
 
       {requests.length === 0 ? (

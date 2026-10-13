@@ -5,11 +5,10 @@ import { useState } from 'react';
 interface PhotoUploaderProps {
   value: string[];
   onChange: (urls: string[]) => void;
+  max?: number;
 }
 
-const MAX_PHOTOS = 5;
-
-export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
+export function PhotoUploader({ value, onChange, max: MAX_PHOTOS = 5 }: PhotoUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

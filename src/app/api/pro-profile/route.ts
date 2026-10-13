@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { after, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { sendNewProPendingEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
@@ -14,6 +15,8 @@ const schema = z.object({
   serviceZip: z.string().min(1),
   serviceRadiusMiles: z.number().int().positive(),
   categoryIds: z.array(z.string()).min(1),
+  photoUrl: z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.').nullable().optional(),
+  licenseNumber: z.string().max(100).nullable().optional(),
 });
 
 export async function POST(req: Request) {

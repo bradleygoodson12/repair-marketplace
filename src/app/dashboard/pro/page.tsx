@@ -8,9 +8,11 @@ import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
+import { EditProfileToggle } from './edit-profile-toggle';
 import { LeadCard } from './lead-card';
 import { ProProfileForm } from './profile-form';
 import { QuoteDefaultsForm } from './quote-defaults-form';
+import { QuickQuoteTemplatesCard } from './quick-quote-templates-card';
 import { SubscriptionCard } from './subscription-card';
 
 export default async function ProDashboardPage() {
@@ -22,7 +24,11 @@ export default async function ProDashboardPage() {
   const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
   const proProfile = await prisma.proProfile.findUnique({
     where: { userId: session.user.id },
-    include: { categories: true, quotes: { include: { request: true } } },
+    include: {
+      categories: true,
+      quotes: { include: { request: true } },
+      quickQuoteTemplates: { orderBy: { createdAt: 'asc' } },
+    },
   });
 
   if (!proProfile) {
@@ -89,16 +95,50 @@ export default async function ProDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{proProfile.businessName}</h1>
-          <p className="text-sm text-gray-500">
-            {proProfile.avgRating.toFixed(1)} ★ ({proProfile.reviewCount} reviews)
-          </p>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          {proProfile.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={proProfile.photoUrl}
+              alt=""
+              className="h-14 w-14 flex-shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gray-950 text-lg font-bold text-brand-400">
+              {proProfile.businessName.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{proProfile.businessName}</h1>
+            <p className="text-sm text-gray-500">
+              {proProfile.avgRating.toFixed(1)} ★ ({proProfile.reviewCount} reviews)
+              {proProfile.licenseNumber && <> · License #{proProfile.licenseNumber}</>}
+            </p>
+          </div>
         </div>
-        <Link href={`/pros/${proProfile.id}`} className="text-sm font-medium text-brand-600 hover:underline">
-          View public profile
-        </Link>
+        <div className="flex-shrink-0">
+          <Link href={`/pros/${proProfile.id}`} className="text-sm font-medium text-brand-600 hover:underline">
+            View public profile
+          </Link>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <EditProfileToggle
+          categories={categories}
+          initialValues={{
+            businessName: proProfile.businessName,
+            bio: proProfile.bio,
+            yearsExperience: proProfile.yearsExperience,
+            hourlyRateCents: proProfile.hourlyRateCents,
+            serviceZip: proProfile.serviceZip,
+            serviceRadiusMiles: proProfile.serviceRadiusMiles,
+            categoryIds,
+            photoUrl: proProfile.photoUrl,
+            licenseNumber: proProfile.licenseNumber,
+          }}
+        />
       </div>
 
       <SubscriptionCard
@@ -113,6 +153,8 @@ export default async function ProDashboardPage() {
         initialMessage={proProfile.defaultQuoteMessage}
         initialDurationDays={proProfile.defaultDurationDays}
       />
+
+      <QuickQuoteTemplatesCard templates={proProfile.quickQuoteTemplates} />
 
       <h2 className="mb-4 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
@@ -131,6 +173,7 @@ export default async function ProDashboardPage() {
               alreadyQuoted={quotedRequestIds.has(r.id)}
               defaultMessage={proProfile.defaultQuoteMessage}
               defaultDurationDays={proProfile.defaultDurationDays}
+              templates={proProfile.quickQuoteTemplates}
             />
           ))}
         </div>

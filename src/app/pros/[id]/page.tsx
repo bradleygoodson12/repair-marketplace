@@ -23,9 +23,14 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gray-950 text-lg font-bold text-brand-400">
-            {pro.businessName.charAt(0).toUpperCase()}
-          </span>
+          {pro.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pro.photoUrl} alt="" className="h-14 w-14 flex-shrink-0 rounded-full object-cover" />
+          ) : (
+            <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gray-950 text-lg font-bold text-brand-400">
+              {pro.businessName.charAt(0).toUpperCase()}
+            </span>
+          )}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{pro.businessName}</h1>
             <div className="mt-1 flex items-center gap-3">
@@ -57,6 +62,7 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
             <span>{pro.yearsExperience} years experience</span>
             {pro.hourlyRateCents && <span>{formatCents(pro.hourlyRateCents)}/hr</span>}
             <span>Services within {pro.serviceRadiusMiles} miles of {pro.serviceZip}</span>
+            {pro.licenseNumber && <span>License #{pro.licenseNumber}</span>}
           </div>
           <div className="flex flex-wrap gap-2">
             {pro.categories.map((c) => (

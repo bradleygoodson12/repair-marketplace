@@ -5,21 +5,46 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
+import { PhotoUploader } from '@/components/photo-uploader';
 
 interface CategoryOption {
   id: string;
   name: string;
 }
 
-export function ProProfileForm({ categories }: { categories: CategoryOption[] }) {
+interface ProfileValues {
+  businessName: string;
+  bio: string;
+  yearsExperience: number;
+  hourlyRateCents: number | null;
+  serviceZip: string;
+  serviceRadiusMiles: number;
+  categoryIds: string[];
+  photoUrl: string | null;
+  licenseNumber: string | null;
+}
+
+export function ProProfileForm({
+  categories,
+  initialValues,
+  onSaved,
+}: {
+  categories: CategoryOption[];
+  initialValues?: ProfileValues;
+  onSaved?: () => void;
+}) {
   const router = useRouter();
-  const [businessName, setBusinessName] = useState('');
-  const [bio, setBio] = useState('');
-  const [yearsExperience, setYearsExperience] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
-  const [serviceZip, setServiceZip] = useState('');
-  const [serviceRadiusMiles, setServiceRadiusMiles] = useState('15');
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [businessName, setBusinessName] = useState(initialValues?.businessName ?? '');
+  const [bio, setBio] = useState(initialValues?.bio ?? '');
+  const [yearsExperience, setYearsExperience] = useState(initialValues?.yearsExperience.toString() ?? '');
+  const [hourlyRate, setHourlyRate] = useState(
+    initialValues?.hourlyRateCents ? (initialValues.hourlyRateCents / 100).toString() : '',
+  );
+  const [serviceZip, setServiceZip] = useState(initialValues?.serviceZip ?? '');
+  const [serviceRadiusMiles, setServiceRadiusMiles] = useState(initialValues?.serviceRadiusMiles.toString() ?? '15');
+  const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? []);
+  const [photoUrls, setPhotoUrls] = useState<string[]>(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
+  const [licenseNumber, setLicenseNumber] = useState(initialValues?.licenseNumber ?? '');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -43,6 +68,8 @@ export function ProProfileForm({ categories }: { categories: CategoryOption[] })
         serviceZip,
         serviceRadiusMiles: parseInt(serviceRadiusMiles || '15', 10),
         categoryIds,
+        photoUrl: photoUrls[0] ?? null,
+        licenseNumber: licenseNumber.trim() || null,
       }),
     });
 
@@ -55,10 +82,15 @@ export function ProProfileForm({ categories }: { categories: CategoryOption[] })
     }
 
     router.refresh();
+    onSaved?.();
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Business photo (optional)</label>
+        <PhotoUploader value={photoUrls} onChange={setPhotoUrls} max={1} />
+      </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Business name</label>
         <Input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
@@ -100,6 +132,14 @@ export function ProProfileForm({ categories }: { categories: CategoryOption[] })
         </div>
       </div>
       <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">License number (optional)</label>
+        <Input
+          placeholder="e.g. SC-HVAC-10234"
+          value={licenseNumber}
+          onChange={(e) => setLicenseNumber(e.target.value)}
+        />
+      </div>
+      <div>
         <label className="mb-2 block text-sm font-medium text-gray-700">Service categories</label>
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
@@ -120,7 +160,7 @@ export function ProProfileForm({ categories }: { categories: CategoryOption[] })
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
-        {loading ? 'Saving…' : 'Save profile'}
+        {loading ? 'Saving…' : initialValues ? 'Save changes' : 'Save profile'}
       </Button>
     </form>
   );
