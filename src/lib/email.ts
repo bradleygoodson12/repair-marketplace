@@ -145,3 +145,24 @@ export async function sendNewProPendingEmail(params: { to: string; businessName:
     ),
   );
 }
+
+export async function sendBookingCancelledEmail(params: {
+  to: string;
+  requestTitle: string;
+  cancelledByLabel: string;
+  reason: string | null;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Booking cancelled — "${params.requestTitle}"`,
+    layout(
+      'A booking was cancelled',
+      `<p style="margin:0 0 8px;">${params.cancelledByLabel} cancelled the booking for <strong>${params.requestTitle}</strong>.</p>
+       ${params.reason ? `<p style="margin:0; padding:12px; background:#fafafa; border-radius:8px;">"${params.reason}"</p>` : ''}`,
+      url,
+      'View details',
+    ),
+  );
+}

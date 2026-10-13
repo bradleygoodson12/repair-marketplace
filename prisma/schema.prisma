@@ -283,6 +283,9 @@ model Booking {
   totalCents            Int
   createdAt             DateTime      @default(now())
   completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancelledByRole       Role?
+  cancelReason          String?       @db.Text
 
   request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)

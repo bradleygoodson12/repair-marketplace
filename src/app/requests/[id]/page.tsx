@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
+import { CancelBookingButton } from './cancel-booking-button';
 import { CompleteButton } from './complete-button';
 import { MessagePoller } from './message-poller';
 import { MessageThread } from './message-thread';
@@ -45,6 +46,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         })
       : null;
   const myQuote = proProfile ? request.quotes.find((q) => q.proProfileId === proProfile.id) : null;
+  const isBookedPro = !!request.booking && request.booking.quote.proProfile.userId === session.user.id;
   const isParticipant =
     isCustomer || request.quotes.some((q) => q.proProfile.userId === session.user.id);
 
@@ -129,8 +131,24 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               that payment.
             </p>
 
-            {isCustomer && request.booking.status !== 'COMPLETED' && (
-              <CompleteButton bookingId={request.booking.id} />
+            {request.booking.status === 'CANCELLED' && (
+              <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                <p>
+                  Cancelled by {request.booking.cancelledByRole === 'CUSTOMER' ? 'the customer' : 'the pro'}
+                  {request.booking.cancelledAt && ` on ${formatDate(request.booking.cancelledAt)}`}.
+                </p>
+                {request.booking.cancelReason && <p className="mt-1 italic">"{request.booking.cancelReason}"</p>}
+              </div>
+            )}
+
+            {isCustomer && request.booking.status !== 'COMPLETED' && request.booking.status !== 'CANCELLED' && (
+              <div className="flex flex-wrap items-center gap-2">
+                <CompleteButton bookingId={request.booking.id} />
+                <CancelBookingButton bookingId={request.booking.id} />
+              </div>
+            )}
+            {isBookedPro && request.booking.status !== 'COMPLETED' && request.booking.status !== 'CANCELLED' && (
+              <CancelBookingButton bookingId={request.booking.id} />
             )}
             {isCustomer && request.booking.status === 'COMPLETED' && !request.booking.review && (
               <div className="mt-2">
