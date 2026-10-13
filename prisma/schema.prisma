@@ -367,3 +367,15 @@ model RepairLineItem {
 
   @@index([repairDocumentId])
 }
+
+// Backs a simple Postgres rate limiter (see src/lib/rate-limit.ts) — no
+// Redis/KV in this stack, and at this scale a small indexed table is plenty.
+// Rows outside the checked window are pruned on each check, so this never
+// grows unbounded.
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

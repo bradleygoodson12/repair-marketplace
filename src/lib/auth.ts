@@ -4,6 +4,7 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -21,8 +22,12 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        const normalizedEmail = credentials.email.toLowerCase();
+        const allowed = await checkRateLimit(`login:${normalizedEmail}`, 10, 15 * 60 * 1000);
+        if (!allowed) return null;
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+          where: { email: normalizedEmail },
         });
         if (!user) return null;
 

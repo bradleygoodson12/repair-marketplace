@@ -1,11 +1,27 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StarRating } from '@/components/star-rating';
+import { siteUrl } from '@/lib/site';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const pro = await prisma.proProfile.findUnique({
+    where: { id },
+    include: { categories: { include: { category: true } } },
+  });
+  if (!pro) return {};
+  const categoryNames = pro.categories.map((c) => c.category.name).join(', ');
+  return {
+    title: pro.businessName,
+    description: `${pro.businessName} — ${categoryNames || 'home repair pro'} on Repair Bee, serving within ${pro.serviceRadiusMiles} miles of ${pro.serviceZip}. ${pro.bio}`.slice(0, 300),
+  };
+}
 
 export default async function ProProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,8 +35,30 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
 
   if (!pro) notFound();
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: pro.businessName,
+    description: pro.bio,
+    image: pro.photoUrl ?? undefined,
+    url: `${siteUrl()}/pros/${pro.id}`,
+    areaServed: pro.serviceZip,
+    ...(pro.reviewCount > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: pro.avgRating,
+        reviewCount: pro.reviewCount,
+      },
+    }),
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           {pro.photoUrl ? (

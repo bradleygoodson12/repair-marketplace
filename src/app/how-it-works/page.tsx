@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'How It Works',
+  description:
+    'How Repair Bee works for homeowners and repair pros — post a job, get quotes from verified local pros, and book with confidence.',
+};
 
 const homeownerSteps = [
   'Post a repair job with a description, photos, and your address.',

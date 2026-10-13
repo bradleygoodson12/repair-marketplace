@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 const schema = z.object({
   name: z.string().min(1),
@@ -12,6 +13,11 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  const allowed = await checkRateLimit(`register:${getClientIp(req)}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many signup attempts. Try again later.' }, { status: 429 });
+  }
+
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

@@ -6,6 +6,7 @@ import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Claude can take well past a normal request/response cycle to read and
 // analyze a multi-page PDF. Rather than make the agent stare at a spinner
@@ -26,6 +27,13 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== 'CUSTOMER') {
     return NextResponse.json({ error: 'Only customers can upload a repair document.' }, { status: 403 });
+  }
+
+  // Each upload triggers a multi-page document analysis call to Anthropic —
+  // the most expensive AI call in the app, so this gets the tightest cap.
+  const allowed = await checkRateLimit(`repair-document:${session.user.id}`, 10, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many document uploads. Try again in a bit.' }, { status: 429 });
   }
 
   const parsed = schema.safeParse(await req.json());

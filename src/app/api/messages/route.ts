@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { sendNewMessageEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const schema = z.object({
   requestId: z.string(),
@@ -15,6 +16,11 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
+  }
+
+  const allowed = await checkRateLimit(`message:${session.user.id}`, 30, 10 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many messages sent. Slow down a bit.' }, { status: 429 });
   }
 
   const parsed = schema.safeParse(await req.json());

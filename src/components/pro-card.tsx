@@ -14,7 +14,7 @@ interface ProCardData {
   verified: boolean;
 }
 
-export function ProCard({ pro }: { pro: ProCardData }) {
+export function ProCard({ pro, distanceMiles }: { pro: ProCardData; distanceMiles?: number }) {
   return (
     <Link href={`/pros/${pro.id}`}>
       <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
@@ -40,6 +40,9 @@ export function ProCard({ pro }: { pro: ProCardData }) {
             <span>{pro.yearsExperience} yrs experience</span>
             {pro.hourlyRateCents && <span>{formatCents(pro.hourlyRateCents)}/hr</span>}
           </div>
+          {distanceMiles !== undefined && (
+            <span className="text-xs text-gray-400">{distanceMiles.toFixed(1)} mi away</span>
+          )}
         </CardContent>
       </Card>
     </Link>

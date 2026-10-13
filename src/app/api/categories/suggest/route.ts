@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { suggestCategoryForJob } from '@/lib/anthropic';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const schema = z.object({
   title: z.string().min(1),
@@ -15,6 +16,13 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== 'CUSTOMER') {
     return NextResponse.json({ error: 'Only customers can get a category suggestion.' }, { status: 403 });
+  }
+
+  // Each call hits Anthropic's API — cap per-user usage so a runaway client
+  // or deliberate abuse can't rack up unbounded cost.
+  const allowed = await checkRateLimit(`suggest-category:${session.user.id}`, 20, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many suggestion requests. Try again in a bit.' }, { status: 429 });
   }
 
   const parsed = schema.safeParse(await req.json());

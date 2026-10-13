@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
+
 import { CategoryGrid } from '@/components/category-grid';
 import { prisma } from '@/lib/prisma';
+
+export const metadata: Metadata = {
+  title: 'Browse Services',
+  description: 'Browse every repair category on Repair Bee and find verified local pros near you.',
+};
 
 export default async function CategoriesPage({
   searchParams,

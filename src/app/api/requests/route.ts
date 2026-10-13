@@ -6,6 +6,7 @@ import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { notifyMatchingPros } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const schema = z.object({
   categoryId: z.string(),
@@ -28,6 +29,13 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== 'CUSTOMER') {
     return NextResponse.json({ error: 'Only customers can post job requests.' }, { status: 403 });
+  }
+
+  // Posting a request emails every matching pro — cap it so one account
+  // can't blast the same lead-notification fan-out over and over.
+  const allowed = await checkRateLimit(`post-request:${session.user.id}`, 20, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many job posts. Try again in a bit.' }, { status: 429 });
   }
 
   const body = await req.json();

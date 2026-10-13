@@ -4,12 +4,14 @@ import './globals.css';
 import { Footer } from '@/components/footer';
 import { Navbar } from '@/components/navbar';
 import { Providers } from '@/components/providers';
+import { siteUrl } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'Repair Bee | Home Repair Marketplace',
+  metadataBase: new URL(siteUrl()),
+  title: { default: 'Repair Bee | Home Repair Marketplace', template: '%s | Repair Bee' },
   description: 'Find trusted, verified pros for any home repair job — get quotes, compare pros, and book with confidence.',
 };
 
