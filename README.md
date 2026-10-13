@@ -115,6 +115,18 @@ Seeded demo logins (password: `password123`):
 - `customer@example.com`
 - `jamie.pro@example.com` / `morgan.pro@example.com` / `riley.pro@example.com`
 
+### Tests
+
+```bash
+npm test          # run once
+npm run test:watch
+```
+
+Vitest, covering pure logic only (zip distance/validation, currency/date
+formatting, filename sanitization, upload-URL validation) — no DB or network
+needed. Not a full suite; it's a regression-safety net for the parts most
+likely to silently break, not coverage of every route.
+
 ### Stripe webhook (local dev)
 
 ```bash
