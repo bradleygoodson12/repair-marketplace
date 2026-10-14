@@ -24,6 +24,7 @@ interface LeadCardProps {
     status: string;
     budgetMinCents: number | null;
     budgetMaxCents: number | null;
+    postedAsAgent: boolean;
     category: { icon: string; name: string };
     property: { city: string; state: string; zip: string };
   };
@@ -59,6 +60,11 @@ export function LeadCard({
                 {request.category.icon} {request.category.name}
               </span>
               <Badge status={request.status} />
+              {request.postedAsAgent && (
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  Agent referral
+                </span>
+              )}
               {alreadyQuoted && <span className="text-xs font-medium text-brand-600">You quoted</span>}
             </div>
             <p className="font-semibold text-gray-900 hover:underline">{request.title}</p>

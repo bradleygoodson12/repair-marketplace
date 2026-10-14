@@ -56,6 +56,11 @@ export default async function CustomerDashboardPage() {
                         {r.category.icon} {r.category.name}
                       </span>
                       <Badge status={r.status} />
+                      {r.postedAsAgent && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          For {r.clientName || 'a client'}
+                        </span>
+                      )}
                     </div>
                     <p className="font-semibold text-gray-900">{r.title}</p>
                   </div>

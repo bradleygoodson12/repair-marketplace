@@ -44,6 +44,10 @@ export function RequestForm({
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [postedAsAgent, setPostedAsAgent] = useState(false);
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -98,6 +102,10 @@ export function RequestForm({
         budgetMaxCents: budgetMax ? Math.round(parseFloat(budgetMax) * 100) : null,
         preferredDate: preferredDate || null,
         photoUrls,
+        postedAsAgent,
+        clientName,
+        clientEmail,
+        clientPhone,
         property: { addressLine1, city, state, zip },
       }),
     });
@@ -173,6 +181,39 @@ export function RequestForm({
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Preferred date</label>
         <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 p-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            checked={postedAsAgent}
+            onChange={(e) => setPostedAsAgent(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          I'm a real estate agent posting this on behalf of a client
+        </label>
+        {postedAsAgent && (
+          <div className="mt-3 flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Client name</label>
+              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Client email</label>
+                <Input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Client phone</label>
+                <Input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              Shared with the pro once they quote, so they know who to coordinate access and scheduling with.
+            </p>
+          </div>
+        )}
       </div>
 
       <h3 className="mt-2 font-semibold text-gray-900">Property address</h3>

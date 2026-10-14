@@ -238,6 +238,13 @@ model ServiceRequest {
   budgetMaxCents       Int?
   preferredDate       DateTime?
   photoUrls           String[]      @default([])
+  // Lets an agent/realtor post a job for a client without creating a
+  // separate account for that client — the pro still ends up talking to
+  // whoever actually owns the property.
+  postedAsAgent       Boolean       @default(false)
+  clientName          String?
+  clientEmail         String?
+  clientPhone         String?
   // Set when this request was created from a RepairDocument line item, so
   // pros have a quick pointer into a long attached report instead of
   // having to search the whole thing.

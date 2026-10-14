@@ -16,6 +16,10 @@ const schema = z.object({
   budgetMaxCents: z.number().int().nonnegative().nullable().optional(),
   preferredDate: z.string().nullable().optional(),
   photoUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
+  postedAsAgent: z.boolean().optional(),
+  clientName: z.string().max(200).optional(),
+  clientEmail: z.string().email().max(200).optional().or(z.literal('')),
+  clientPhone: z.string().max(30).optional(),
   property: z.object({
     addressLine1: z.string().min(1),
     addressLine2: z.string().optional(),
@@ -44,8 +48,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { categoryId, title, description, budgetMinCents, budgetMaxCents, preferredDate, photoUrls, property } =
-    parsed.data;
+  const {
+    categoryId,
+    title,
+    description,
+    budgetMinCents,
+    budgetMaxCents,
+    preferredDate,
+    photoUrls,
+    postedAsAgent,
+    clientName,
+    clientEmail,
+    clientPhone,
+    property,
+  } = parsed.data;
 
   const category = await prisma.category.findUnique({ where: { id: categoryId } });
   if (!category) {
@@ -68,6 +84,10 @@ export async function POST(req: Request) {
         budgetMaxCents: budgetMaxCents ?? null,
         preferredDate: preferredDate ? new Date(preferredDate) : null,
         photoUrls: photoUrls ?? [],
+        postedAsAgent: postedAsAgent ?? false,
+        clientName: postedAsAgent ? clientName?.trim() || null : null,
+        clientEmail: postedAsAgent ? clientEmail?.trim() || null : null,
+        clientPhone: postedAsAgent ? clientPhone?.trim() || null : null,
       },
     });
   });

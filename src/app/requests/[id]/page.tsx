@@ -60,6 +60,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           <div className="mb-1 flex items-center gap-2">
             <span className="text-sm text-gray-500">{request.category.icon} {request.category.name}</span>
             <Badge status={request.status} />
+            {request.postedAsAgent && (
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                Agent referral
+              </span>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -105,12 +110,25 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 </span>
               )}
               <div className="text-sm">
-                <p className="font-medium text-gray-900">{request.customer.name}</p>
+                <p className="font-medium text-gray-900">
+                  {request.customer.name}
+                  {request.postedAsAgent && <span className="font-normal text-gray-500"> (agent)</span>}
+                </p>
                 <p className="text-gray-500">
                   {request.customer.email}
                   {request.customer.phone && <> · {request.customer.phone}</>}
                 </p>
               </div>
+            </div>
+          )}
+          {!isCustomer && myQuote && request.postedAsAgent && (request.clientName || request.clientEmail || request.clientPhone) && (
+            <div className="rounded-lg bg-amber-50 p-3 text-sm">
+              <p className="font-medium text-amber-900">Actual client — coordinate scheduling with them</p>
+              <p className="text-amber-800">
+                {request.clientName}
+                {request.clientEmail && <> · {request.clientEmail}</>}
+                {request.clientPhone && <> · {request.clientPhone}</>}
+              </p>
             </div>
           )}
         </CardContent>
