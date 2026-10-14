@@ -6,11 +6,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { StarRatingInput } from '@/components/star-rating';
+import { PhotoUploader } from '@/components/photo-uploader';
 
 export function ReviewForm({ bookingId }: { bookingId: string }) {
   const router = useRouter();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +24,7 @@ export function ReviewForm({ bookingId }: { bookingId: string }) {
     const res = await fetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId, rating, comment }),
+      body: JSON.stringify({ bookingId, rating, comment, photoUrls }),
     });
 
     setLoading(false);
@@ -45,6 +47,7 @@ export function ReviewForm({ bookingId }: { bookingId: string }) {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
+      <PhotoUploader value={photoUrls} onChange={setPhotoUrls} max={5} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading} className="w-fit">
         {loading ? 'Submitting…' : 'Submit review'}

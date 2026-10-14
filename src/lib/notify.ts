@@ -6,7 +6,8 @@ type NotificationType =
   | 'QUOTE_ACCEPTED'
   | 'PRO_VERIFIED'
   | 'BOOKING_CANCELLED'
-  | 'SUBSCRIPTION_PAST_DUE';
+  | 'SUBSCRIPTION_PAST_DUE'
+  | 'NEW_REVIEW';
 
 // In-app notifications are best-effort, same spirit as the email sends they
 // usually run alongside — a failure here should never break the request

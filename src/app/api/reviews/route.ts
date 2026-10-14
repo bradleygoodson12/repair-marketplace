@@ -1,14 +1,17 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
+import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
   bookingId: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string().optional(),
+  photoUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
 });
 
 export async function POST(req: Request) {
@@ -22,11 +25,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { bookingId, rating, comment } = parsed.data;
+  const { bookingId, rating, comment, photoUrls } = parsed.data;
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    include: { request: true, quote: true, review: true },
+    include: { request: true, quote: { include: { proProfile: true } }, review: true },
   });
   if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
   if (booking.request.customerId !== session.user.id) {
@@ -47,6 +50,7 @@ export async function POST(req: Request) {
         customerId: session.user.id,
         rating,
         comment,
+        photoUrls: photoUrls ?? [],
       },
     });
 
@@ -64,6 +68,16 @@ export async function POST(req: Request) {
       },
     });
   });
+
+  after(() =>
+    notify({
+      userId: booking.quote.proProfile.userId,
+      type: 'NEW_REVIEW',
+      title: `New ${rating}-star review: ${booking.request.title}`,
+      body: comment,
+      url: `/pros/${booking.quote.proProfileId}`,
+    }),
+  );
 
   return NextResponse.json({ ok: true });
 }

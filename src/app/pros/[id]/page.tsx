@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { notFound } from 'next/navigation';
 
+import { AttachmentThumb } from '@/components/attachment-thumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ReportButton } from '@/components/report-button';
@@ -11,6 +12,8 @@ import { authOptions } from '@/lib/auth';
 import { siteUrl } from '@/lib/site';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
+
+import { ReviewReplySection } from './review-reply-section';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -39,6 +42,7 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
   if (!pro) notFound();
 
   const session = await getServerSession(authOptions);
+  const isOwner = session?.user?.id === pro.userId;
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -158,6 +162,20 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
                 </div>
                 <StarRating rating={r.rating} />
                 {r.comment && <p className="mt-2 text-sm text-gray-600">{r.comment}</p>}
+                {r.photoUrls.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {r.photoUrls.map((url) => (
+                      <AttachmentThumb key={url} url={url} />
+                    ))}
+                  </div>
+                )}
+                <ReviewReplySection
+                  reviewId={r.id}
+                  businessName={pro.businessName}
+                  proReply={r.proReply}
+                  proReplyAt={r.proReplyAt ? r.proReplyAt.toISOString() : null}
+                  isOwner={isOwner}
+                />
               </CardContent>
             </Card>
           ))}
