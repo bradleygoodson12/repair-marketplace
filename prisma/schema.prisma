@@ -137,6 +137,10 @@ model ProProfile {
   // isn't necessarily a headshot.
   photoUrl          String?
   licenseNumber     String?
+  // Past-work gallery shown on the public profile — the single biggest
+  // trust signal in home services ("show me what you've actually done"),
+  // separate from the one storefront photoUrl above.
+  portfolioUrls     String[] @default([])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -22,6 +22,7 @@ interface ProfileValues {
   categoryIds: string[];
   photoUrl: string | null;
   licenseNumber: string | null;
+  portfolioUrls: string[];
 }
 
 export function ProProfileForm({
@@ -45,6 +46,7 @@ export function ProProfileForm({
   const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? []);
   const [photoUrls, setPhotoUrls] = useState<string[]>(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
   const [licenseNumber, setLicenseNumber] = useState(initialValues?.licenseNumber ?? '');
+  const [portfolioUrls, setPortfolioUrls] = useState<string[]>(initialValues?.portfolioUrls ?? []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -70,6 +72,7 @@ export function ProProfileForm({
         categoryIds,
         photoUrl: photoUrls[0] ?? null,
         licenseNumber: licenseNumber.trim() || null,
+        portfolioUrls,
       }),
     });
 
@@ -138,6 +141,11 @@ export function ProProfileForm({
           value={licenseNumber}
           onChange={(e) => setLicenseNumber(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Portfolio photos (optional)</label>
+        <p className="mb-2 text-xs text-gray-500">Show customers examples of your past work.</p>
+        <PhotoUploader value={portfolioUrls} onChange={setPortfolioUrls} max={12} />
       </div>
       <div>
         <label className="mb-2 block text-sm font-medium text-gray-700">Service categories</label>

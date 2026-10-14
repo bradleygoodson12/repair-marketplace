@@ -120,6 +120,24 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
         </CardContent>
       </Card>
 
+      {pro.portfolioUrls.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 text-lg font-bold text-gray-900">Past work</h2>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {pro.portfolioUrls.map((url) => (
+              <a key={url} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt=""
+                  className="aspect-square h-full w-full object-cover transition hover:opacity-90"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {session?.user && (
         <div className="mb-6 flex justify-end">
           <ReportButton targetUserId={pro.userId} label="Report this pro" />

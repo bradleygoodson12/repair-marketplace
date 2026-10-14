@@ -17,6 +17,7 @@ const schema = z.object({
   categoryIds: z.array(z.string()).min(1),
   photoUrl: z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.').nullable().optional(),
   licenseNumber: z.string().max(100).nullable().optional(),
+  portfolioUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(12).optional(),
 });
 
 export async function POST(req: Request) {

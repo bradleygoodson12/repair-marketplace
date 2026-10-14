@@ -137,6 +137,7 @@ export default async function ProDashboardPage() {
             categoryIds,
             photoUrl: proProfile.photoUrl,
             licenseNumber: proProfile.licenseNumber,
+            portfolioUrls: proProfile.portfolioUrls,
           }}
         />
       </div>

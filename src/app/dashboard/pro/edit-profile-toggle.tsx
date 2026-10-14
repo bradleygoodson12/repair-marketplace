@@ -22,6 +22,7 @@ interface ProfileValues {
   categoryIds: string[];
   photoUrl: string | null;
   licenseNumber: string | null;
+  portfolioUrls: string[];
 }
 
 export function EditProfileToggle({
