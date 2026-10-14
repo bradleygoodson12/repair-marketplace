@@ -8,11 +8,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  billingMode: 'PAY_PER_LEAD' | 'SUBSCRIPTION';
+  billingMode: 'PAY_PER_QUOTE' | 'SUBSCRIPTION';
   status: 'NONE' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
   currentPeriodEnd: string | null;
   subscriptionPriceDollars: number;
-  leadPriceDollars: number;
+  quotePriceDollars: number;
 }
 
 export function SubscriptionCard({
@@ -20,7 +20,7 @@ export function SubscriptionCard({
   status,
   currentPeriodEnd,
   subscriptionPriceDollars,
-  leadPriceDollars,
+  quotePriceDollars,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -52,13 +52,13 @@ export function SubscriptionCard({
     window.location.href = data.url;
   }
 
-  async function switchToPayPerLead() {
+  async function switchToPayPerQuote() {
     setLoading(true);
     setError(null);
     const res = await fetch('/api/pro-profile/billing-mode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ billingMode: 'PAY_PER_LEAD' }),
+      body: JSON.stringify({ billingMode: 'PAY_PER_QUOTE' }),
     });
     const data = await res.json().catch(() => ({}));
     setLoading(false);
@@ -72,15 +72,15 @@ export function SubscriptionCard({
   const isActive = status === 'ACTIVE';
   const needsAttention = status === 'NONE' || status === 'CANCELED' || status === 'PAST_DUE';
 
-  if (billingMode === 'PAY_PER_LEAD') {
+  if (billingMode === 'PAY_PER_QUOTE') {
     return (
       <Card className="mb-8">
         <CardContent className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-bold text-gray-900">Pay per lead</h2>
+            <h2 className="font-bold text-gray-900">Pay per quote</h2>
             <p className="text-sm text-gray-600">
-              ${leadPriceDollars} per lead — pay only for the specific jobs you want to quote. Switch to a monthly
-              subscription any time for unlimited leads.
+              All leads in your area are free to view — pay ${quotePriceDollars} only when you send a quote. Switch
+              to a monthly subscription any time for unlimited quoting with no per-quote fee.
             </p>
             {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
           </div>
@@ -99,15 +99,15 @@ export function SubscriptionCard({
           <h2 className="font-bold text-gray-900">{isActive ? 'Subscription active' : 'Subscription required'}</h2>
           <p className="text-sm text-gray-600">
             {isActive
-              ? `You can see and quote job leads${currentPeriodEnd ? ` · renews ${currentPeriodEnd}` : ''}.`
+              ? `You can quote every job lead with no per-quote fee${currentPeriodEnd ? ` · renews ${currentPeriodEnd}` : ''}.`
               : status === 'PAST_DUE'
-                ? 'Your subscription payment failed — update billing to keep quoting.'
-                : `Subscribe for $${subscriptionPriceDollars}/month to see and quote every job lead.`}
+                ? 'Your subscription payment failed — update billing to keep quoting for free.'
+                : `Subscribe for $${subscriptionPriceDollars}/month for unlimited quotes, or pay $${quotePriceDollars} per quote instead.`}
           </p>
           {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
           {isActive && (
             <p className="mt-1 text-xs text-gray-400">
-              Prefer to pay per lead instead? Cancel your subscription from billing first.
+              Prefer to pay per quote instead? Cancel your subscription from billing first.
             </p>
           )}
         </div>
@@ -123,11 +123,11 @@ export function SubscriptionCard({
               </Button>
               <button
                 type="button"
-                onClick={switchToPayPerLead}
+                onClick={switchToPayPerQuote}
                 disabled={loading}
                 className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
               >
-                Or switch to pay-per-lead
+                Or switch to pay-per-quote
               </button>
             </>
           )}

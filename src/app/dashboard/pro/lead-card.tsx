@@ -7,7 +7,7 @@ import { QuoteForm } from '@/app/requests/[id]/quote-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UnlockLeadButton } from '@/components/unlock-lead-button';
+import { PayQuoteFeeButton } from '@/components/pay-quote-fee-button';
 import { formatCents } from '@/lib/utils';
 
 interface QuickQuoteTemplate {
@@ -16,6 +16,12 @@ interface QuickQuoteTemplate {
   priceCents: number;
   durationDays: number | null;
   message: string | null;
+}
+
+interface MyQuote {
+  id: string;
+  quoteFeeRequiredCents: number | null;
+  quoteFeePaidAt: Date | null;
 }
 
 interface LeadCardProps {
@@ -30,9 +36,8 @@ interface LeadCardProps {
     property: { city: string; state: string; zip: string };
   };
   distance: number | null;
-  alreadyQuoted: boolean;
-  hasFullAccess: boolean;
-  leadPriceDollars: number;
+  myQuote?: MyQuote;
+  quotePriceDollars: number;
   defaultMessage: string | null;
   defaultDurationDays: number | null;
   templates?: QuickQuoteTemplate[];
@@ -46,14 +51,14 @@ interface LeadCardProps {
 export function LeadCard({
   request,
   distance,
-  alreadyQuoted,
-  hasFullAccess,
-  leadPriceDollars,
+  myQuote,
+  quotePriceDollars,
   defaultMessage,
   defaultDurationDays,
   templates,
 }: LeadCardProps) {
   const [quoting, setQuoting] = useState(false);
+  const paymentPending = !!myQuote?.quoteFeeRequiredCents && !myQuote.quoteFeePaidAt;
 
   return (
     <Card className="transition-all hover:border-brand-300 hover:shadow-md">
@@ -70,7 +75,10 @@ export function LeadCard({
                   Agent referral
                 </span>
               )}
-              {alreadyQuoted && <span className="text-xs font-medium text-brand-600">You quoted</span>}
+              {myQuote && !paymentPending && <span className="text-xs font-medium text-brand-600">You quoted</span>}
+              {paymentPending && (
+                <span className="text-xs font-medium text-amber-600">Payment pending</span>
+              )}
             </div>
             <p className="font-semibold text-gray-900 hover:underline">{request.title}</p>
             <p className="text-sm text-gray-500">
@@ -85,17 +93,15 @@ export function LeadCard({
                 {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
               </span>
             )}
-            {!alreadyQuoted && hasFullAccess && (
+            {!myQuote && (
               <Button type="button" size="sm" variant="outline" onClick={() => setQuoting((q) => !q)}>
                 {quoting ? 'Cancel' : 'Quick quote'}
               </Button>
             )}
-            {!alreadyQuoted && !hasFullAccess && (
-              <UnlockLeadButton requestId={request.id} priceDollars={leadPriceDollars} />
-            )}
+            {paymentPending && <PayQuoteFeeButton quoteId={myQuote!.id} priceDollars={quotePriceDollars} />}
           </div>
         </div>
-        {quoting && hasFullAccess && (
+        {quoting && !myQuote && (
           <div className="border-t border-gray-100 pt-3">
             <QuoteForm
               requestId={request.id}

@@ -4,12 +4,11 @@ import { notFound, redirect } from 'next/navigation';
 
 import { AttachmentThumb } from '@/components/attachment-thumb';
 import { ReportButton } from '@/components/report-button';
-import { UnlockLeadButton } from '@/components/unlock-lead-button';
+import { PayQuoteFeeButton } from '@/components/pay-quote-fee-button';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { LEAD_PRICE_CENTS } from '@/lib/pricing';
+import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
@@ -55,18 +54,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
   if (!isParticipant && !proProfile) notFound();
 
-  // A pay-per-lead pro without a subscription or a purchased unlock for
-  // this specific request only sees a teaser — full description, photos,
-  // exact address, competing quotes, and the ability to quote are all
-  // behind this. Customers and pros who've already quoted always see
-  // everything.
-  const leadUnlock = proProfile
-    ? await prisma.leadUnlock.findUnique({
-        where: { proProfileId_requestId: { proProfileId: proProfile.id, requestId: id } },
-      })
-    : null;
-  const hasActiveAccess = !!proProfile && (proProfile.subscriptionStatus === 'ACTIVE' || !!leadUnlock);
-  const proCanSeeFull = isCustomer || !!myQuote || hasActiveAccess;
+  // A pay-per-quote fee owed but unpaid holds the quote back from the
+  // customer and other pros — it exists but isn't "live" until paid (or
+  // was free because the pro was an active subscriber at submission time).
+  const myQuoteIsLive = !!myQuote && (!myQuote.quoteFeeRequiredCents || !!myQuote.quoteFeePaidAt);
+  const visibleQuotes = request.quotes.filter((q) => !q.quoteFeeRequiredCents || q.quoteFeePaidAt);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -83,9 +75,8 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {proProfile && !proCanSeeFull
-              ? `${request.property.city}, ${request.property.state} ${request.property.zip}`
-              : `${request.property.addressLine1}, ${request.property.city}, ${request.property.state} ${request.property.zip}`}
+            {request.property.addressLine1}, {request.property.city}, {request.property.state}{' '}
+            {request.property.zip}
           </p>
         </div>
         {!isCustomer && <ReportButton targetRequestId={request.id} label="Report this job" />}
@@ -93,19 +84,15 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">
-          {!proProfile || proCanSeeFull ? (
-            <p className="text-gray-700">{request.description}</p>
-          ) : (
-            <p className="text-sm text-gray-500">Full description available once you unlock this lead.</p>
-          )}
-          {(!proProfile || proCanSeeFull) && request.photoUrls.length > 0 && (
+          <p className="text-gray-700">{request.description}</p>
+          {request.photoUrls.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {request.photoUrls.map((url) => (
                 <AttachmentThumb key={url} url={url} />
               ))}
             </div>
           )}
-          {(!proProfile || proCanSeeFull) && request.sourcePageNumber && (
+          {request.sourcePageNumber && (
             <p className="text-sm text-gray-500">
               📄 Referenced on page {request.sourcePageNumber} of the attached report.
             </p>
@@ -117,11 +104,9 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
               </span>
             )}
-            {(!proProfile || proCanSeeFull) && request.preferredDate && (
-              <span>Preferred date: {formatDate(request.preferredDate)}</span>
-            )}
+            {request.preferredDate && <span>Preferred date: {formatDate(request.preferredDate)}</span>}
           </div>
-          {!isCustomer && myQuote && (
+          {!isCustomer && myQuoteIsLive && (
             <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
               {request.customer.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -143,7 +128,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               </div>
             </div>
           )}
-          {!isCustomer && myQuote && request.postedAsAgent && (request.clientName || request.clientEmail || request.clientPhone) && (
+          {!isCustomer && myQuoteIsLive && request.postedAsAgent && (request.clientName || request.clientEmail || request.clientPhone) && (
             <div className="rounded-lg bg-amber-50 p-3 text-sm">
               <p className="font-medium text-amber-900">Actual client — coordinate scheduling with them</p>
               <p className="text-amber-800">
@@ -202,14 +187,14 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </Card>
       )}
 
-      {!request.booking && (!proProfile || proCanSeeFull) && (
+      {!request.booking && (
         <div className="mb-6">
           <h2 className="mb-3 font-bold text-gray-900">Quotes</h2>
-          <QuotesList quotes={request.quotes} isCustomer={isCustomer} requestBooked={!!request.booking} />
+          <QuotesList quotes={visibleQuotes} isCustomer={isCustomer} requestBooked={!!request.booking} />
         </div>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.verified && proCanSeeFull && (
+      {proProfile && !myQuote && !request.booking && proProfile.verified && (
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
@@ -233,29 +218,27 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </Card>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.verified && !proCanSeeFull && (
+      {proProfile && myQuote && myQuote.quoteFeeRequiredCents && !myQuote.quoteFeePaidAt && (
         <Card className="mb-6">
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="mb-1 font-bold text-gray-900">Unlock this lead to see full details &amp; quote</h2>
+              <h2 className="mb-1 font-bold text-gray-900">Complete payment to send your quote</h2>
               <p className="text-sm text-gray-600">
-                Full description, photos, exact address, competing quotes, and the ability to submit a quote — yours
-                once you unlock it. Or subscribe for unlimited access to every lead.
+                Your quote is saved but not yet visible to the customer — pay the ${QUOTE_PRICE_CENTS / 100} quote
+                fee to send it. Subscribe instead for unlimited quotes with no per-quote fee.
               </p>
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
-              <UnlockLeadButton requestId={request.id} priceDollars={LEAD_PRICE_CENTS / 100} />
-              <Link href="/dashboard/pro">
-                <Button size="sm" variant="outline">
-                  Subscribe instead
-                </Button>
+              <PayQuoteFeeButton quoteId={myQuote.id} priceDollars={QUOTE_PRICE_CENTS / 100} />
+              <Link href="/dashboard/pro" className="text-sm font-medium text-brand-600 hover:underline">
+                Subscribe instead
               </Link>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {(isCustomer || myQuote) && (
+      {(isCustomer || myQuoteIsLive) && (
         <Card>
           <CardContent>
             <MessagePoller />

@@ -56,14 +56,22 @@ export function QuoteForm({
       }),
     });
 
-    setLoading(false);
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      setLoading(false);
       setError(typeof data.error === 'string' ? data.error : 'Could not submit quote.');
       return;
     }
 
+    if (data.checkoutUrl) {
+      // Quote is saved but held back until the pro pays the quote fee —
+      // send them straight to Stripe Checkout to finish.
+      window.location.href = data.checkoutUrl;
+      return;
+    }
+
+    setLoading(false);
     router.refresh();
   }
 

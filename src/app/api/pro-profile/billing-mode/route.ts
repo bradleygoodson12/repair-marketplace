@@ -5,11 +5,11 @@ import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const schema = z.object({ billingMode: z.enum(['PAY_PER_LEAD', 'SUBSCRIPTION']) });
+const schema = z.object({ billingMode: z.enum(['PAY_PER_QUOTE', 'SUBSCRIPTION']) });
 
 // Switching TO subscription just flips the preference — the pro still has
 // to go through checkout separately to actually become ACTIVE. Switching
-// TO pay-per-lead while a Stripe subscription is actively charging them is
+// TO pay-per-quote while a Stripe subscription is actively charging them is
 // refused outright: cancel it first (via the billing portal) so the DB
 // preference and the real Stripe state can't silently disagree.
 export async function POST(req: Request) {
@@ -28,9 +28,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Complete your pro profile first.' }, { status: 403 });
   }
 
-  if (parsed.data.billingMode === 'PAY_PER_LEAD' && proProfile.subscriptionStatus === 'ACTIVE') {
+  if (parsed.data.billingMode === 'PAY_PER_QUOTE' && proProfile.subscriptionStatus === 'ACTIVE') {
     return NextResponse.json(
-      { error: 'Cancel your active subscription from billing before switching to pay-per-lead.' },
+      { error: 'Cancel your active subscription from billing before switching to pay-per-quote.' },
       { status: 409 },
     );
   }

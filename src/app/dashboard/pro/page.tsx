@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { LEAD_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
+import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
@@ -28,7 +28,6 @@ export default async function ProDashboardPage() {
       categories: true,
       quotes: { include: { request: true } },
       quickQuoteTemplates: { orderBy: { createdAt: 'asc' } },
-      leadUnlocks: true,
     },
   });
 
@@ -92,9 +91,7 @@ export default async function ProDashboardPage() {
     .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
     .slice(0, 20);
 
-  const quotedRequestIds = new Set(proProfile.quotes.map((q) => q.requestId));
-  const unlockedRequestIds = new Set(proProfile.leadUnlocks.map((u) => u.requestId));
-  const isSubscribed = proProfile.subscriptionStatus === 'ACTIVE';
+  const quoteByRequestId = new Map(proProfile.quotes.map((q) => [q.requestId, q]));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -158,7 +155,7 @@ export default async function ProDashboardPage() {
           proProfile.subscriptionCurrentPeriodEnd ? proProfile.subscriptionCurrentPeriodEnd.toLocaleDateString() : null
         }
         subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
-        leadPriceDollars={LEAD_PRICE_CENTS / 100}
+        quotePriceDollars={QUOTE_PRICE_CENTS / 100}
       />
 
       <QuoteDefaultsForm
@@ -180,9 +177,8 @@ export default async function ProDashboardPage() {
               key={r.id}
               request={r}
               distance={distance}
-              alreadyQuoted={quotedRequestIds.has(r.id)}
-              hasFullAccess={isSubscribed || unlockedRequestIds.has(r.id)}
-              leadPriceDollars={LEAD_PRICE_CENTS / 100}
+              myQuote={quoteByRequestId.get(r.id)}
+              quotePriceDollars={QUOTE_PRICE_CENTS / 100}
               defaultMessage={proProfile.defaultQuoteMessage}
               defaultDurationDays={proProfile.defaultDurationDays}
               templates={proProfile.quickQuoteTemplates}

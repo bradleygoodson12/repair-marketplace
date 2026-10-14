@@ -26,30 +26,28 @@ async function handleSubscriptionCheckout(checkoutSession: Stripe.Checkout.Sessi
       stripeSubscriptionId: subscription.id,
       subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
       subscriptionCurrentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
-      // Successfully subscribing is the moment a pay-per-lead pro becomes a
-      // subscriber — no separate "switch mode" step needed on their end.
+      // Successfully subscribing is the moment a pay-per-quote pro becomes
+      // a subscriber — no separate "switch mode" step needed on their end.
       billingMode: 'SUBSCRIPTION',
     },
   });
 }
 
-// Pay-per-lead unlock — a one-time payment, not a subscription. Idempotent
-// via the (proProfileId, requestId) unique constraint, since Stripe can
-// redeliver this event.
-async function handleLeadUnlockCheckout(checkoutSession: Stripe.Checkout.Session) {
-  const { kind, proProfileId, requestId } = checkoutSession.metadata ?? {};
-  if (kind !== 'lead_unlock' || !proProfileId || !requestId) return;
+// Pay-per-quote fee — a one-time payment, not a subscription. Clears the
+// quote to send: marks it paid and (re)opens it up to the customer by
+// moving the request to QUOTED, the step quote submission deferred while
+// payment was pending. Idempotent against Stripe's at-least-once delivery
+// since a second update just re-sets the same paidAt-ish state.
+async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) {
+  const { kind, quoteId } = checkoutSession.metadata ?? {};
+  if (kind !== 'quote_fee' || !quoteId) return;
 
-  await prisma.leadUnlock.upsert({
-    where: { proProfileId_requestId: { proProfileId, requestId } },
-    update: {},
-    create: {
-      proProfileId,
-      requestId,
-      priceCents: checkoutSession.amount_total ?? 0,
-      stripeSessionId: checkoutSession.id,
-    },
+  const quote = await prisma.quote.update({
+    where: { id: quoteId },
+    data: { quoteFeePaidAt: new Date(), stripeSessionId: checkoutSession.id },
   });
+
+  await prisma.serviceRequest.update({ where: { id: quote.requestId }, data: { status: 'QUOTED' } });
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -116,7 +114,7 @@ export async function POST(req: Request) {
     case 'checkout.session.completed': {
       const checkoutSession = event.data.object as Stripe.Checkout.Session;
       if (checkoutSession.mode === 'payment') {
-        await handleLeadUnlockCheckout(checkoutSession);
+        await handleQuoteFeeCheckout(checkoutSession);
       } else {
         await handleSubscriptionCheckout(checkoutSession);
       }

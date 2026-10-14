@@ -4,13 +4,16 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 
-export function UnlockLeadButton({
-  requestId,
+// Retry path for a pro whose quote is saved but not yet paid for — reopens
+// Stripe Checkout for that specific quote's fee without resubmitting the
+// quote form.
+export function PayQuoteFeeButton({
+  quoteId,
   priceDollars,
   size = 'sm',
   className,
 }: {
-  requestId: string;
+  quoteId: string;
   priceDollars: number;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -21,7 +24,7 @@ export function UnlockLeadButton({
   async function handleClick() {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/requests/${requestId}/unlock`, { method: 'POST' });
+    const res = await fetch(`/api/quotes/${quoteId}/pay`, { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) {
       setError(typeof data.error === 'string' ? data.error : 'Could not start checkout.');
@@ -34,7 +37,7 @@ export function UnlockLeadButton({
   return (
     <div className={className}>
       <Button type="button" size={size} onClick={handleClick} disabled={loading}>
-        {loading ? 'Redirecting…' : `Unlock lead — $${priceDollars}`}
+        {loading ? 'Redirecting…' : `Pay quote fee — $${priceDollars}`}
       </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

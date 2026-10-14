@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
+import { createQuoteFeeCheckoutSession } from '@/lib/quote-fee';
 
 const schema = z.object({
   priceCents: z.number().int().positive(),
@@ -26,18 +28,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Your profile must be verified before you can submit quotes.' }, { status: 403 });
   }
 
-  if (proProfile.subscriptionStatus !== 'ACTIVE') {
-    const unlock = await prisma.leadUnlock.findUnique({
-      where: { proProfileId_requestId: { proProfileId: proProfile.id, requestId: id } },
-    });
-    if (!unlock) {
-      return NextResponse.json(
-        { error: 'Unlock this lead or subscribe to submit a quote.' },
-        { status: 403 },
-      );
-    }
-  }
-
   const request = await prisma.serviceRequest.findUnique({ where: { id } });
   if (!request) {
     return NextResponse.json({ error: 'Request not found.' }, { status: 404 });
@@ -52,11 +42,47 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const existingQuote = await prisma.quote.findUnique({
+    where: { requestId_proProfileId: { requestId: request.id, proProfileId: proProfile.id } },
+  });
+
+  // Fee requirement is fixed at submission time from the pro's current
+  // subscription status — a later subscription change doesn't retroactively
+  // alter a quote already sent or already paid for.
+  const isActiveSubscriber = proProfile.subscriptionStatus === 'ACTIVE';
+  const quoteFeeRequiredCents = isActiveSubscriber ? null : QUOTE_PRICE_CENTS;
+  const keepsPriorPayment = !!existingQuote?.quoteFeePaidAt && existingQuote.quoteFeeRequiredCents === quoteFeeRequiredCents;
+
   const quote = await prisma.quote.upsert({
     where: { requestId_proProfileId: { requestId: request.id, proProfileId: proProfile.id } },
-    update: { ...parsed.data, status: 'PENDING' },
-    create: { ...parsed.data, requestId: request.id, proProfileId: proProfile.id },
+    update: {
+      ...parsed.data,
+      status: 'PENDING',
+      quoteFeeRequiredCents,
+      quoteFeePaidAt: keepsPriorPayment ? existingQuote!.quoteFeePaidAt : null,
+    },
+    create: {
+      ...parsed.data,
+      requestId: request.id,
+      proProfileId: proProfile.id,
+      quoteFeeRequiredCents,
+      quoteFeePaidAt: null,
+    },
   });
+
+  // Fee owed and not yet paid — the quote exists but stays hidden from the
+  // customer and other pros until payment clears (see requests/[id]/page.tsx
+  // and the stripe webhook's handleQuoteFeeCheckout).
+  if (quoteFeeRequiredCents && !quote.quoteFeePaidAt) {
+    const checkoutUrl = await createQuoteFeeCheckoutSession({
+      quoteId: quote.id,
+      requestId: request.id,
+      requestTitle: request.title,
+      stripeCustomerId: proProfile.stripeCustomerId,
+      userEmail: session.user.email ?? null,
+    });
+    return NextResponse.json({ id: quote.id, checkoutUrl });
+  }
 
   await prisma.serviceRequest.update({ where: { id: request.id }, data: { status: 'QUOTED' } });
 
