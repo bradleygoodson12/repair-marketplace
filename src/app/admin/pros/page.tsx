@@ -57,6 +57,8 @@ export default async function AdminProsPage() {
                     {' · '}
                     {pro.serviceZip} · {pro.categories.map((c) => c.category.name).join(', ')}
                     {pro.licenseNumber && <> · License #{pro.licenseNumber}</>}
+                    {' · '}
+                    {pro.billingMode === 'SUBSCRIPTION' ? `Subscription (${pro.subscriptionStatus})` : 'Pay per lead'}
                   </p>
                   <p className="mt-0.5 text-xs text-gray-400">
                     Licensed and insured status are self-reported by the pro, not verified by Repair Bee.

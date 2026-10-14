@@ -25,11 +25,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!proProfile.verified) {
     return NextResponse.json({ error: 'Your profile must be verified before you can submit quotes.' }, { status: 403 });
   }
+
   if (proProfile.subscriptionStatus !== 'ACTIVE') {
-    return NextResponse.json(
-      { error: 'An active subscription is required to submit quotes. Subscribe from your dashboard.' },
-      { status: 403 },
-    );
+    const unlock = await prisma.leadUnlock.findUnique({
+      where: { proProfileId_requestId: { proProfileId: proProfile.id, requestId: id } },
+    });
+    if (!unlock) {
+      return NextResponse.json(
+        { error: 'Unlock this lead or subscribe to submit a quote.' },
+        { status: 403 },
+      );
+    }
   }
 
   const request = await prisma.serviceRequest.findUnique({ where: { id } });

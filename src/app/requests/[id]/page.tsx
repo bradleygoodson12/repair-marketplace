@@ -4,10 +4,12 @@ import { notFound, redirect } from 'next/navigation';
 
 import { AttachmentThumb } from '@/components/attachment-thumb';
 import { ReportButton } from '@/components/report-button';
+import { UnlockLeadButton } from '@/components/unlock-lead-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
+import { LEAD_PRICE_CENTS } from '@/lib/pricing';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
@@ -53,6 +55,19 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
   if (!isParticipant && !proProfile) notFound();
 
+  // A pay-per-lead pro without a subscription or a purchased unlock for
+  // this specific request only sees a teaser — full description, photos,
+  // exact address, competing quotes, and the ability to quote are all
+  // behind this. Customers and pros who've already quoted always see
+  // everything.
+  const leadUnlock = proProfile
+    ? await prisma.leadUnlock.findUnique({
+        where: { proProfileId_requestId: { proProfileId: proProfile.id, requestId: id } },
+      })
+    : null;
+  const hasActiveAccess = !!proProfile && (proProfile.subscriptionStatus === 'ACTIVE' || !!leadUnlock);
+  const proCanSeeFull = isCustomer || !!myQuote || hasActiveAccess;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-6 flex items-start justify-between">
@@ -68,8 +83,9 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {request.property.addressLine1}, {request.property.city}, {request.property.state}{' '}
-            {request.property.zip}
+            {proProfile && !proCanSeeFull
+              ? `${request.property.city}, ${request.property.state} ${request.property.zip}`
+              : `${request.property.addressLine1}, ${request.property.city}, ${request.property.state} ${request.property.zip}`}
           </p>
         </div>
         {!isCustomer && <ReportButton targetRequestId={request.id} label="Report this job" />}
@@ -77,15 +93,19 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">
-          <p className="text-gray-700">{request.description}</p>
-          {request.photoUrls.length > 0 && (
+          {!proProfile || proCanSeeFull ? (
+            <p className="text-gray-700">{request.description}</p>
+          ) : (
+            <p className="text-sm text-gray-500">Full description available once you unlock this lead.</p>
+          )}
+          {(!proProfile || proCanSeeFull) && request.photoUrls.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {request.photoUrls.map((url) => (
                 <AttachmentThumb key={url} url={url} />
               ))}
             </div>
           )}
-          {request.sourcePageNumber && (
+          {(!proProfile || proCanSeeFull) && request.sourcePageNumber && (
             <p className="text-sm text-gray-500">
               📄 Referenced on page {request.sourcePageNumber} of the attached report.
             </p>
@@ -97,7 +117,9 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
               </span>
             )}
-            {request.preferredDate && <span>Preferred date: {formatDate(request.preferredDate)}</span>}
+            {(!proProfile || proCanSeeFull) && request.preferredDate && (
+              <span>Preferred date: {formatDate(request.preferredDate)}</span>
+            )}
           </div>
           {!isCustomer && myQuote && (
             <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
@@ -180,14 +202,14 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </Card>
       )}
 
-      {!request.booking && (
+      {!request.booking && (!proProfile || proCanSeeFull) && (
         <div className="mb-6">
           <h2 className="mb-3 font-bold text-gray-900">Quotes</h2>
           <QuotesList quotes={request.quotes} isCustomer={isCustomer} requestBooked={!!request.booking} />
         </div>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.verified && proProfile.subscriptionStatus === 'ACTIVE' && (
+      {proProfile && !myQuote && !request.booking && proProfile.verified && proCanSeeFull && (
         <Card className="mb-6">
           <CardContent>
             <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
@@ -211,15 +233,24 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </Card>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.verified && proProfile.subscriptionStatus !== 'ACTIVE' && (
+      {proProfile && !myQuote && !request.booking && proProfile.verified && !proCanSeeFull && (
         <Card className="mb-6">
-          <CardContent className="flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
-              An active subscription is required to submit quotes. Subscribe from your dashboard to quote this job.
-            </p>
-            <Link href="/dashboard/pro">
-              <Button size="sm">Subscribe</Button>
-            </Link>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="mb-1 font-bold text-gray-900">Unlock this lead to see full details &amp; quote</h2>
+              <p className="text-sm text-gray-600">
+                Full description, photos, exact address, competing quotes, and the ability to submit a quote — yours
+                once you unlock it. Or subscribe for unlimited access to every lead.
+              </p>
+            </div>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <UnlockLeadButton requestId={request.id} priceDollars={LEAD_PRICE_CENTS / 100} />
+              <Link href="/dashboard/pro">
+                <Button size="sm" variant="outline">
+                  Subscribe instead
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       )}

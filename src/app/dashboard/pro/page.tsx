@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
+import { LEAD_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
@@ -28,6 +28,7 @@ export default async function ProDashboardPage() {
       categories: true,
       quotes: { include: { request: true } },
       quickQuoteTemplates: { orderBy: { createdAt: 'asc' } },
+      leadUnlocks: true,
     },
   });
 
@@ -92,6 +93,8 @@ export default async function ProDashboardPage() {
     .slice(0, 20);
 
   const quotedRequestIds = new Set(proProfile.quotes.map((q) => q.requestId));
+  const unlockedRequestIds = new Set(proProfile.leadUnlocks.map((u) => u.requestId));
+  const isSubscribed = proProfile.subscriptionStatus === 'ACTIVE';
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -117,7 +120,10 @@ export default async function ProDashboardPage() {
             </p>
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-4">
+          <Link href="/dashboard/pro/history" className="text-sm font-medium text-brand-600 hover:underline">
+            Job history
+          </Link>
           <Link href={`/pros/${proProfile.id}`} className="text-sm font-medium text-brand-600 hover:underline">
             View public profile
           </Link>
@@ -146,11 +152,13 @@ export default async function ProDashboardPage() {
       </div>
 
       <SubscriptionCard
+        billingMode={proProfile.billingMode}
         status={proProfile.subscriptionStatus}
         currentPeriodEnd={
           proProfile.subscriptionCurrentPeriodEnd ? proProfile.subscriptionCurrentPeriodEnd.toLocaleDateString() : null
         }
         subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
+        leadPriceDollars={LEAD_PRICE_CENTS / 100}
       />
 
       <QuoteDefaultsForm
@@ -163,9 +171,7 @@ export default async function ProDashboardPage() {
       <h2 className="mb-4 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
-      {proProfile.subscriptionStatus !== 'ACTIVE' ? (
-        <p className="mb-8 text-gray-500">Subscribe above to see and quote job leads in your area.</p>
-      ) : leads.length === 0 ? (
+      {leads.length === 0 ? (
         <p className="mb-8 text-gray-500">No open leads in your service area right now — check back soon.</p>
       ) : (
         <div className="mb-8 flex flex-col gap-3">
@@ -175,6 +181,8 @@ export default async function ProDashboardPage() {
               request={r}
               distance={distance}
               alreadyQuoted={quotedRequestIds.has(r.id)}
+              hasFullAccess={isSubscribed || unlockedRequestIds.has(r.id)}
+              leadPriceDollars={LEAD_PRICE_CENTS / 100}
               defaultMessage={proProfile.defaultQuoteMessage}
               defaultDurationDays={proProfile.defaultDurationDays}
               templates={proProfile.quickQuoteTemplates}

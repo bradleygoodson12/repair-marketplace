@@ -4,11 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
 /**
- * Emails every actively-subscribed pro whose categories and service radius
- * match a newly created request. Only subscribed pros can see/quote leads
- * at all, so unsubscribed pros are never notified. Best-effort: failures
- * are logged (by sendNewLeadEmail) but never thrown, so a bad email never
- * breaks request creation — call this from `after()`, not inline.
+ * Emails every verified pro whose categories and service radius match a
+ * newly created request — active subscribers (unlimited access) and
+ * pay-per-lead pros alike (so they know there's a lead worth unlocking).
+ * A lapsed/cancelled subscriber who hasn't switched to pay-per-lead is the
+ * one case excluded: they're not currently paying for access either way.
+ * Best-effort: failures are logged (by sendNewLeadEmail) but never thrown,
+ * so a bad email never breaks request creation — call this from `after()`,
+ * not inline.
  */
 export async function notifyMatchingPros(requestId: string) {
   const request = await prisma.serviceRequest.findUnique({
@@ -20,7 +23,10 @@ export async function notifyMatchingPros(requestId: string) {
   const candidates = await prisma.proProfileCategory.findMany({
     where: {
       categoryId: request.categoryId,
-      proProfile: { subscriptionStatus: 'ACTIVE' },
+      proProfile: {
+        verified: true,
+        OR: [{ subscriptionStatus: 'ACTIVE' }, { billingMode: 'PAY_PER_LEAD' }],
+      },
     },
     include: { proProfile: { include: { user: true } } },
   });

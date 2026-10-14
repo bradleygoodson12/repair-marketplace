@@ -5,6 +5,8 @@ import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { formatDate, formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
+const THIRTY_DAYS_AGO_MS = 30 * 24 * 60 * 60 * 1000;
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <Card>
@@ -26,6 +28,8 @@ export default async function AdminOverviewPage() {
     openRequestCount,
     bookingCount,
     activeSubscriptions,
+    payPerLeadProCount,
+    leadUnlockRevenue30d,
     pendingVerificationCount,
     openReportCount,
     newSignupsThisWeek,
@@ -38,6 +42,11 @@ export default async function AdminOverviewPage() {
     prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
     prisma.booking.count(),
     prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+    prisma.proProfile.count({ where: { billingMode: 'PAY_PER_LEAD' } }),
+    prisma.leadUnlock.aggregate({
+      where: { createdAt: { gte: new Date(Date.now() - THIRTY_DAYS_AGO_MS) } },
+      _sum: { priceCents: true },
+    }),
     prisma.proProfile.count({ where: { verified: false } }),
     prisma.report.count({ where: { status: 'OPEN' } }),
     prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
@@ -53,8 +62,8 @@ export default async function AdminOverviewPage() {
     <div>
       <h2 className="mb-4 text-lg font-bold text-gray-900">Platform overview</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Pros pay Repair Bee a monthly subscription. Customers pay pros directly outside the app, so booking totals
-        aren't platform revenue.
+        Pros pay Repair Bee either a monthly subscription or a flat fee per lead they unlock. Customers pay pros
+        directly outside the app, so booking totals aren't platform revenue.
       </p>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Customers" value={customerCount.toLocaleString()} />
@@ -68,6 +77,11 @@ export default async function AdminOverviewPage() {
         <StatCard
           label="Subscription revenue (est/mo)"
           value={formatCents(activeSubscriptions * SUBSCRIPTION_PRICE_CENTS)}
+        />
+        <StatCard label="Pay-per-lead pros" value={payPerLeadProCount.toLocaleString()} />
+        <StatCard
+          label="Lead unlock revenue (30d)"
+          value={formatCents(leadUnlockRevenue30d._sum.priceCents ?? 0)}
         />
         <StatCard label="New signups (7d)" value={newSignupsThisWeek.toLocaleString()} />
       </div>

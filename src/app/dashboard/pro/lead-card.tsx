@@ -7,6 +7,7 @@ import { QuoteForm } from '@/app/requests/[id]/quote-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { UnlockLeadButton } from '@/components/unlock-lead-button';
 import { formatCents } from '@/lib/utils';
 
 interface QuickQuoteTemplate {
@@ -30,6 +31,8 @@ interface LeadCardProps {
   };
   distance: number | null;
   alreadyQuoted: boolean;
+  hasFullAccess: boolean;
+  leadPriceDollars: number;
   defaultMessage: string | null;
   defaultDurationDays: number | null;
   templates?: QuickQuoteTemplate[];
@@ -44,6 +47,8 @@ export function LeadCard({
   request,
   distance,
   alreadyQuoted,
+  hasFullAccess,
+  leadPriceDollars,
   defaultMessage,
   defaultDurationDays,
   templates,
@@ -80,14 +85,17 @@ export function LeadCard({
                 {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
               </span>
             )}
-            {!alreadyQuoted && (
+            {!alreadyQuoted && hasFullAccess && (
               <Button type="button" size="sm" variant="outline" onClick={() => setQuoting((q) => !q)}>
                 {quoting ? 'Cancel' : 'Quick quote'}
               </Button>
             )}
+            {!alreadyQuoted && !hasFullAccess && (
+              <UnlockLeadButton requestId={request.id} priceDollars={leadPriceDollars} />
+            )}
           </div>
         </div>
-        {quoting && (
+        {quoting && hasFullAccess && (
           <div className="border-t border-gray-100 pt-3">
             <QuoteForm
               requestId={request.id}

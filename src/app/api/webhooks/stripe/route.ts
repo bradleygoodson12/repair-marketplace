@@ -26,6 +26,28 @@ async function handleSubscriptionCheckout(checkoutSession: Stripe.Checkout.Sessi
       stripeSubscriptionId: subscription.id,
       subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
       subscriptionCurrentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
+      // Successfully subscribing is the moment a pay-per-lead pro becomes a
+      // subscriber — no separate "switch mode" step needed on their end.
+      billingMode: 'SUBSCRIPTION',
+    },
+  });
+}
+
+// Pay-per-lead unlock — a one-time payment, not a subscription. Idempotent
+// via the (proProfileId, requestId) unique constraint, since Stripe can
+// redeliver this event.
+async function handleLeadUnlockCheckout(checkoutSession: Stripe.Checkout.Session) {
+  const { kind, proProfileId, requestId } = checkoutSession.metadata ?? {};
+  if (kind !== 'lead_unlock' || !proProfileId || !requestId) return;
+
+  await prisma.leadUnlock.upsert({
+    where: { proProfileId_requestId: { proProfileId, requestId } },
+    update: {},
+    create: {
+      proProfileId,
+      requestId,
+      priceCents: checkoutSession.amount_total ?? 0,
+      stripeSessionId: checkoutSession.id,
     },
   });
 }
@@ -91,9 +113,15 @@ export async function POST(req: Request) {
   }
 
   switch (event.type) {
-    case 'checkout.session.completed':
-      await handleSubscriptionCheckout(event.data.object as Stripe.Checkout.Session);
+    case 'checkout.session.completed': {
+      const checkoutSession = event.data.object as Stripe.Checkout.Session;
+      if (checkoutSession.mode === 'payment') {
+        await handleLeadUnlockCheckout(checkoutSession);
+      } else {
+        await handleSubscriptionCheckout(checkoutSession);
+      }
       break;
+    }
     case 'customer.subscription.updated':
       await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
       break;

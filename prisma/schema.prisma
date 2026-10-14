@@ -43,6 +43,11 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+enum BillingMode {
+  PAY_PER_LEAD
+  SUBSCRIPTION
+}
+
 enum DocumentStatus {
   PROCESSING
   READY
@@ -119,10 +124,14 @@ model ProProfile {
   verified          Boolean  @default(false)
   avgRating         Float    @default(0)
   reviewCount       Int      @default(0)
-  // Pros are paid directly by customers outside the app and must be
-  // subscribed (and admin-vetted via `verified`) to operate on the
-  // platform at all — there's no per-lead fallback. stripeCustomerId is
-  // the pro as a Stripe *customer* (billed), never a Connect payout account.
+  // Pros are paid directly by customers outside the app — the only money
+  // the app ever charges a pro is for lead access, either per-lead or via
+  // subscription. billingMode is the pro's current choice of the two;
+  // defaults to the lower-commitment pay-per-lead option so a new pro can
+  // try the platform before committing to a monthly fee. stripeCustomerId
+  // is the pro as a Stripe *customer* (billed), never a Connect payout
+  // account.
+  billingMode          BillingMode        @default(PAY_PER_LEAD)
   stripeCustomerId     String?
   stripeSubscriptionId String?
   subscriptionStatus   SubscriptionStatus @default(NONE)
@@ -157,6 +166,7 @@ model ProProfile {
 
   user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   categories ProProfileCategory[]
+  leadUnlocks LeadUnlock[]
   quotes     Quote[]
   reviews    Review[]            @relation("ReviewsReceived")
   quickQuoteTemplates QuickQuoteTemplate[]
@@ -271,6 +281,7 @@ model ServiceRequest {
   messages Message[]
   repairLineItem RepairLineItem?
   reports  Report[]
+  leadUnlocks LeadUnlock[]
 
   @@index([customerId])
   @@index([categoryId])
@@ -293,6 +304,26 @@ model Quote {
   booking    Booking?
 
   @@unique([requestId, proProfileId])
+  @@index([requestId])
+}
+
+// A pay-per-lead pro's one-time purchase of full access to a specific
+// request — full description, photos, exact address, and the ability to
+// quote. Subscribed pros never need these; this only exists for pros on
+// BillingMode.PAY_PER_LEAD.
+model LeadUnlock {
+  id              String   @id @default(cuid())
+  proProfileId    String
+  requestId       String
+  priceCents      Int
+  stripeSessionId String?
+  createdAt       DateTime @default(now())
+
+  proProfile ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  request    ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([proProfileId, requestId])
+  @@index([proProfileId])
   @@index([requestId])
 }
 
