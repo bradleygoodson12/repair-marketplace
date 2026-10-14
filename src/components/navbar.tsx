@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
+import { NotificationBell } from '@/components/notification-bell';
 
 const navLinks = [
   { href: '/categories', label: 'Browse services' },
@@ -67,6 +68,8 @@ export function Navbar() {
               </>
             )}
           </div>
+
+          {session && <NotificationBell />}
 
           <button
             type="button"

@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { sendBookingCancelledEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({
@@ -53,6 +54,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       cancelledByLabel: isCustomer ? 'The customer' : booking.quote.proProfile.businessName,
       reason,
       requestId: booking.requestId,
+    }),
+  );
+  after(() =>
+    notify({
+      userId: isCustomer ? booking.quote.proProfile.userId : booking.request.customerId,
+      type: 'BOOKING_CANCELLED',
+      title: `Booking cancelled: ${booking.request.title}`,
+      body: reason ?? undefined,
+      url: `/requests/${booking.requestId}`,
     }),
   );
 

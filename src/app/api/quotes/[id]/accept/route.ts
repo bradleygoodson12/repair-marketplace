@@ -3,6 +3,7 @@ import { NextResponse, after } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import { sendQuoteAcceptedEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -50,6 +51,14 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       requestTitle: quote.request.title,
       customerName: session.user.name ?? 'The customer',
       requestId: quote.requestId,
+    }),
+  );
+  after(() =>
+    notify({
+      userId: quote.proProfile.userId,
+      type: 'QUOTE_ACCEPTED',
+      title: `Your quote was accepted: ${quote.request.title}`,
+      url: `/requests/${quote.requestId}`,
     }),
   );
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { sendNewMessageEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -59,6 +60,30 @@ export async function POST(req: Request) {
           }),
         ),
       ),
+    );
+    after(() =>
+      Promise.all(
+        request.quotes.map((q) =>
+          notify({
+            userId: q.proProfile.userId,
+            type: 'NEW_MESSAGE',
+            title: `New message: ${request.title}`,
+            body,
+            url: `/requests/${request.id}`,
+          }),
+        ),
+      ),
+    );
+  } else {
+    const sendingPro = request.quotes.find((q) => q.proProfile.userId === session.user.id);
+    after(() =>
+      notify({
+        userId: request.customerId,
+        type: 'NEW_MESSAGE',
+        title: `New message from ${sendingPro?.proProfile.businessName ?? 'a pro'}`,
+        body,
+        url: `/requests/${request.id}`,
+      }),
     );
   }
 

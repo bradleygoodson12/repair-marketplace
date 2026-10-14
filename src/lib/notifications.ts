@@ -1,4 +1,5 @@
 import { sendNewLeadEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
 
@@ -39,6 +40,18 @@ export async function notifyMatchingPros(requestId: string) {
         city: request.property.city,
         state: request.property.state,
         requestId: request.id,
+      }),
+    ),
+  );
+
+  await Promise.all(
+    matching.map(({ proProfile }) =>
+      notify({
+        userId: proProfile.userId,
+        type: 'NEW_LEAD',
+        title: `New lead: ${request.category.name} in ${request.property.city}`,
+        body: request.title,
+        url: `/requests/${request.id}`,
       }),
     ),
   );

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getAdminSession } from '@/lib/admin';
 import { sendProVerifiedEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 
 const schema = z.object({ verified: z.boolean() });
@@ -22,6 +23,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (parsed.data.verified && !existing.verified) {
     after(() => sendProVerifiedEmail({ to: existing.user.email, businessName: existing.businessName }));
+    after(() =>
+      notify({
+        userId: existing.userId,
+        type: 'PRO_VERIFIED',
+        title: 'Your profile has been verified',
+        url: '/dashboard/pro',
+      }),
+    );
   }
 
   return NextResponse.json({ ok: true });

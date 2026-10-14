@@ -3,6 +3,7 @@ import { NextResponse, after } from 'next/server';
 import type Stripe from 'stripe';
 
 import { sendSubscriptionPastDueEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 
@@ -51,6 +52,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (newStatus === 'PAST_DUE' && proProfile.subscriptionStatus !== 'PAST_DUE') {
     after(() =>
       sendSubscriptionPastDueEmail({ to: proProfile.user.email, businessName: proProfile.businessName }),
+    );
+    after(() =>
+      notify({
+        userId: proProfile.userId,
+        type: 'SUBSCRIPTION_PAST_DUE',
+        title: 'Your subscription payment is past due',
+        url: '/dashboard/pro',
+      }),
     );
   }
 }

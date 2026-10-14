@@ -73,6 +73,7 @@ model User {
   repairDocuments RepairDocument[]
   reportsFiled    Report[]       @relation("ReportsFiled")
   reportsReceived Report[]       @relation("ReportsReceived")
+  notifications   Notification[]
 
   @@index([email])
 }
@@ -431,4 +432,21 @@ model Report {
   @@index([status])
   @@index([targetUserId])
   @@index([targetRequestId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?  @db.Text
+  // Where clicking the notification should take the user.
+  url       String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
