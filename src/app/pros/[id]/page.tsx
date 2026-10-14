@@ -94,6 +94,16 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
                   Verified pro
                 </span>
               )}
+              {pro.isLicensed && (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  Licensed
+                </span>
+              )}
+              {pro.isInsured && (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  Insured
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -111,6 +121,12 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
             <span>Services within {pro.serviceRadiusMiles} miles of {pro.serviceZip}</span>
             {pro.licenseNumber && <span>License #{pro.licenseNumber}</span>}
           </div>
+          {(pro.isLicensed || pro.isInsured) && (
+            <p className="text-xs text-gray-400">
+              Licensed and insured status is self-reported by the pro and not verified by Repair Bee. It is the
+              client's sole responsibility to verify a pro's licensing and insurance before hiring.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {pro.categories.map((c) => (
               <span

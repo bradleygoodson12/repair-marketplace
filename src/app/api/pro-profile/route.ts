@@ -17,6 +17,8 @@ const schema = z.object({
   categoryIds: z.array(z.string()).min(1),
   photoUrl: z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.').nullable().optional(),
   licenseNumber: z.string().max(100).nullable().optional(),
+  isLicensed: z.boolean().optional(),
+  isInsured: z.boolean().optional(),
   licenseDocumentUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
   portfolioUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(12).optional(),
 });
@@ -33,20 +35,6 @@ export async function POST(req: Request) {
   }
 
   const { categoryIds, ...profileData } = parsed.data;
-
-  // Mirrors the client-side check in ProProfileForm — enforced here too so
-  // the requirement can't be skipped by calling the API directly.
-  const selectedCategories = await prisma.category.findMany({
-    where: { id: { in: categoryIds } },
-    select: { licenseRequired: true },
-  });
-  const requiresLicense = selectedCategories.some((c) => c.licenseRequired);
-  if (requiresLicense && (profileData.licenseDocumentUrls ?? []).length === 0) {
-    return NextResponse.json(
-      { error: 'License documentation is required for at least one of your selected categories.' },
-      { status: 400 },
-    );
-  }
 
   const existingProfile = await prisma.proProfile.findUnique({ where: { userId: session.user.id } });
 

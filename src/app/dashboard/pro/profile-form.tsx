@@ -11,7 +11,6 @@ import { MultiFileUploader } from '@/components/multi-file-uploader';
 interface CategoryOption {
   id: string;
   name: string;
-  licenseRequired: boolean;
 }
 
 interface ProfileValues {
@@ -24,6 +23,8 @@ interface ProfileValues {
   categoryIds: string[];
   photoUrl: string | null;
   licenseNumber: string | null;
+  isLicensed: boolean;
+  isInsured: boolean;
   licenseDocumentUrls: string[];
   portfolioUrls: string[];
 }
@@ -49,6 +50,8 @@ export function ProProfileForm({
   const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? []);
   const [photoUrls, setPhotoUrls] = useState<string[]>(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
   const [licenseNumber, setLicenseNumber] = useState(initialValues?.licenseNumber ?? '');
+  const [isLicensed, setIsLicensed] = useState(initialValues?.isLicensed ?? false);
+  const [isInsured, setIsInsured] = useState(initialValues?.isInsured ?? false);
   const [licenseDocumentUrls, setLicenseDocumentUrls] = useState<string[]>(initialValues?.licenseDocumentUrls ?? []);
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>(initialValues?.portfolioUrls ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -58,20 +61,9 @@ export function ProProfileForm({
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   }
 
-  const requiredForSelected = categories.filter((c) => categoryIds.includes(c.id) && c.licenseRequired);
-  const requiresLicense = requiredForSelected.length > 0;
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (requiresLicense && licenseDocumentUrls.length === 0) {
-      setError(
-        `License documentation is required for ${requiredForSelected.map((c) => c.name).join(', ')}. Upload it below before saving.`,
-      );
-      return;
-    }
-
     setLoading(true);
 
     const res = await fetch('/api/pro-profile', {
@@ -87,6 +79,8 @@ export function ProProfileForm({
         categoryIds,
         photoUrl: photoUrls[0] ?? null,
         licenseNumber: licenseNumber.trim() || null,
+        isLicensed,
+        isInsured,
         licenseDocumentUrls,
         portfolioUrls,
       }),
@@ -165,30 +159,52 @@ export function ProProfileForm({
               }`}
             >
               {c.name}
-              {c.licenseRequired && ' 🪪'}
             </button>
           ))}
         </div>
-        <p className="mt-2 text-xs text-gray-400">🪪 = state license required for this trade.</p>
       </div>
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">License number (optional)</label>
-        <Input
-          placeholder="e.g. SC-HVAC-10234"
-          value={licenseNumber}
-          onChange={(e) => setLicenseNumber(e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          License documentation {requiresLicense ? '(required)' : '(optional)'}
-        </label>
-        <p className="mb-2 text-xs text-gray-500">
-          {requiresLicense
-            ? `A photo or PDF of your license is required for: ${requiredForSelected.map((c) => c.name).join(', ')}. Reviewed before your profile is verified — not shown publicly.`
-            : 'No license is required for your selected categories, but you can still add certifications to build trust with customers.'}
+      <div className="rounded-lg border border-gray-200 p-4">
+        <label className="mb-1 block text-sm font-medium text-gray-700">License &amp; insurance</label>
+        <p className="mb-3 text-xs text-gray-500">
+          Many trades (plumbing, electrical, HVAC, etc.) require a state license — requirements vary by state, so
+          check your own state's rules. These are self-reported and shown on your public profile; Repair Bee
+          doesn't verify them.
         </p>
-        <MultiFileUploader value={licenseDocumentUrls} onChange={setLicenseDocumentUrls} max={5} />
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={isLicensed}
+              onChange={(e) => setIsLicensed(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            I am licensed for the trades I offer
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={isInsured}
+              onChange={(e) => setIsInsured(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            I carry general liability insurance
+          </label>
+        </div>
+        <div className="mt-3">
+          <label className="mb-1 block text-sm font-medium text-gray-700">License number (optional)</label>
+          <Input
+            placeholder="e.g. SC-HVAC-10234"
+            value={licenseNumber}
+            onChange={(e) => setLicenseNumber(e.target.value)}
+          />
+        </div>
+        <div className="mt-3">
+          <label className="mb-1 block text-sm font-medium text-gray-700">Supporting documents (optional)</label>
+          <p className="mb-2 text-xs text-gray-500">
+            License copy, certificate of insurance, etc. — for our team to spot-check, never shown publicly.
+          </p>
+          <MultiFileUploader value={licenseDocumentUrls} onChange={setLicenseDocumentUrls} max={5} />
+        </div>
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Portfolio photos (optional)</label>

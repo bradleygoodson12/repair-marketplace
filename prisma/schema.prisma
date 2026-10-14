@@ -138,9 +138,15 @@ model ProProfile {
   // isn't necessarily a headshot.
   photoUrl          String?
   licenseNumber     String?
-  // Uploaded proof of license (PDF/photo of the card) — reviewed by an
-  // admin before verifying, rather than taking a typed license number on
-  // faith. Not shown on the public profile; admin-only.
+  // Self-reported by the pro, not verified against any state licensing
+  // board — license/insurance requirements vary by state and trade, so we
+  // don't attempt to encode or enforce them. Shown publicly as badges with
+  // a disclaimer that the customer is responsible for verifying them.
+  isLicensed        Boolean  @default(false)
+  isInsured         Boolean  @default(false)
+  // Optional supporting documents (license copy, certificate of
+  // insurance, etc.) for admins to spot-check — never required, never
+  // shown publicly.
   licenseDocumentUrls String[] @default([])
   // Past-work gallery shown on the public profile — the single biggest
   // trust signal in home services ("show me what you've actually done"),
@@ -183,10 +189,6 @@ model Category {
   slug        String   @unique
   description String
   icon        String
-  // Whether this trade typically requires a state trade license — drives
-  // whether license documentation is required vs. optional on the pro
-  // signup form, and the warning admins see before verifying a pro.
-  licenseRequired Boolean @default(false)
 
   proProfiles ProProfileCategory[]
   requests    ServiceRequest[]

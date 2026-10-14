@@ -10,7 +10,6 @@ import { ProProfileForm } from './profile-form';
 interface CategoryOption {
   id: string;
   name: string;
-  licenseRequired: boolean;
 }
 
 interface ProfileValues {
@@ -23,6 +22,8 @@ interface ProfileValues {
   categoryIds: string[];
   photoUrl: string | null;
   licenseNumber: string | null;
+  isLicensed: boolean;
+  isInsured: boolean;
   licenseDocumentUrls: string[];
   portfolioUrls: string[];
 }
