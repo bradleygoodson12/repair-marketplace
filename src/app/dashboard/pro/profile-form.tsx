@@ -6,10 +6,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { PhotoUploader } from '@/components/photo-uploader';
+import { MultiFileUploader } from '@/components/multi-file-uploader';
 
 interface CategoryOption {
   id: string;
   name: string;
+  licenseRequired: boolean;
 }
 
 interface ProfileValues {
@@ -22,6 +24,7 @@ interface ProfileValues {
   categoryIds: string[];
   photoUrl: string | null;
   licenseNumber: string | null;
+  licenseDocumentUrls: string[];
   portfolioUrls: string[];
 }
 
@@ -46,6 +49,7 @@ export function ProProfileForm({
   const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? []);
   const [photoUrls, setPhotoUrls] = useState<string[]>(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
   const [licenseNumber, setLicenseNumber] = useState(initialValues?.licenseNumber ?? '');
+  const [licenseDocumentUrls, setLicenseDocumentUrls] = useState<string[]>(initialValues?.licenseDocumentUrls ?? []);
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>(initialValues?.portfolioUrls ?? []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,10 +58,21 @@ export function ProProfileForm({
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   }
 
+  const requiredForSelected = categories.filter((c) => categoryIds.includes(c.id) && c.licenseRequired);
+  const requiresLicense = requiredForSelected.length > 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    if (requiresLicense && licenseDocumentUrls.length === 0) {
+      setError(
+        `License documentation is required for ${requiredForSelected.map((c) => c.name).join(', ')}. Upload it below before saving.`,
+      );
+      return;
+    }
+
+    setLoading(true);
 
     const res = await fetch('/api/pro-profile', {
       method: 'POST',
@@ -72,6 +87,7 @@ export function ProProfileForm({
         categoryIds,
         photoUrl: photoUrls[0] ?? null,
         licenseNumber: licenseNumber.trim() || null,
+        licenseDocumentUrls,
         portfolioUrls,
       }),
     });
@@ -135,19 +151,6 @@ export function ProProfileForm({
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">License number (optional)</label>
-        <Input
-          placeholder="e.g. SC-HVAC-10234"
-          value={licenseNumber}
-          onChange={(e) => setLicenseNumber(e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Portfolio photos (optional)</label>
-        <p className="mb-2 text-xs text-gray-500">Show customers examples of your past work.</p>
-        <PhotoUploader value={portfolioUrls} onChange={setPortfolioUrls} max={12} />
-      </div>
-      <div>
         <label className="mb-2 block text-sm font-medium text-gray-700">Service categories</label>
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
@@ -162,9 +165,35 @@ export function ProProfileForm({
               }`}
             >
               {c.name}
+              {c.licenseRequired && ' 🪪'}
             </button>
           ))}
         </div>
+        <p className="mt-2 text-xs text-gray-400">🪪 = state license required for this trade.</p>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">License number (optional)</label>
+        <Input
+          placeholder="e.g. SC-HVAC-10234"
+          value={licenseNumber}
+          onChange={(e) => setLicenseNumber(e.target.value)}
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          License documentation {requiresLicense ? '(required)' : '(optional)'}
+        </label>
+        <p className="mb-2 text-xs text-gray-500">
+          {requiresLicense
+            ? `A photo or PDF of your license is required for: ${requiredForSelected.map((c) => c.name).join(', ')}. Reviewed before your profile is verified — not shown publicly.`
+            : 'No license is required for your selected categories, but you can still add certifications to build trust with customers.'}
+        </p>
+        <MultiFileUploader value={licenseDocumentUrls} onChange={setLicenseDocumentUrls} max={5} />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Portfolio photos (optional)</label>
+        <p className="mb-2 text-xs text-gray-500">Show customers examples of your past work.</p>
+        <PhotoUploader value={portfolioUrls} onChange={setPortfolioUrls} max={12} />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
