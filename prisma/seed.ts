@@ -36,6 +36,21 @@ const CATEGORIES = [
   { name: 'Structural Engineering', slug: 'structural-engineering', icon: '📐', description: 'Inspections, load-bearing assessments & permits' },
   { name: 'Tree Service', slug: 'tree-service', icon: '🌳', description: 'Removal, trimming, stump grinding & storm cleanup' },
   { name: 'Landscaping & Lawn Care', slug: 'landscaping-lawn-care', icon: '🌿', description: 'Mowing, lawn treatment, mulching & yard cleanup' },
+  // Added to round out coverage for items that commonly show up in a home
+  // inspection report or a pre-listing/pre-closing punch list but didn't
+  // map cleanly onto any trade above.
+  { name: 'Mold Remediation', slug: 'mold-remediation', icon: '🦠', description: 'Inspection, testing & removal of mold and moisture damage' },
+  { name: 'Radon Mitigation', slug: 'radon-mitigation', icon: '🌫️', description: 'Radon testing & mitigation system installation' },
+  { name: 'Asbestos & Lead Paint Testing', slug: 'asbestos-lead-testing', icon: '⚠️', description: 'Testing, abatement & safe removal of asbestos and lead-based paint' },
+  { name: 'Chimney & Fireplace Repair', slug: 'chimney-fireplace-repair', icon: '🧯', description: 'Chimney sweeping, repair, relining & fireplace service' },
+  { name: 'Basement Waterproofing', slug: 'basement-waterproofing', icon: '🌊', description: 'Interior & exterior drainage, sump pumps & moisture control' },
+  { name: 'Well Pump & Water Treatment', slug: 'well-water-treatment', icon: '💧', description: 'Well pump repair, water softeners & filtration systems' },
+  { name: 'Asphalt & Driveway Paving', slug: 'asphalt-paving', icon: '🛣️', description: 'Driveway paving, sealcoating & asphalt repair' },
+  { name: 'Irrigation & Sprinkler Repair', slug: 'irrigation-sprinkler', icon: '🚿', description: 'Sprinkler system install, repair & winterization' },
+  { name: 'Carpet Cleaning', slug: 'carpet-cleaning', icon: '🧽', description: 'Deep carpet & upholstery cleaning' },
+  { name: 'Countertop Installation & Repair', slug: 'countertop-repair', icon: '🍽️', description: 'Kitchen & bath countertop install, repair & resurfacing' },
+  { name: 'Solar Panel Install & Repair', slug: 'solar-panel', icon: '☀️', description: 'Solar panel installation, repair & system inspections' },
+  { name: 'Junk Removal & Debris Hauling', slug: 'junk-removal', icon: '🗑️', description: 'Clean-outs, debris hauling & furniture removal' },
 ];
 
 async function main() {
