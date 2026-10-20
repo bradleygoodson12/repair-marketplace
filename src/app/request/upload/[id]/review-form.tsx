@@ -70,6 +70,20 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
     setItems((prev) => prev.map((i) => ({ ...i, selected })));
   }
 
+  function addItem() {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `new-${crypto.randomUUID()}`,
+        title: '',
+        description: '',
+        categoryId: categories[0]?.id ?? '',
+        selected: true,
+        photoUrls: [],
+      },
+    ]);
+  }
+
   async function handleSubmit() {
     const selectedItems = items.filter((i) => i.selected);
     if (selectedItems.length === 0) {
@@ -78,6 +92,11 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
     }
     if (!addressLine1 || !city || !state || !zip) {
       setError('Fill in the full property address before sending.');
+      return;
+    }
+    const incompleteItem = selectedItems.find((i) => !i.title.trim() || !i.description.trim());
+    if (incompleteItem) {
+      setError('Fill in a title and description for every selected item.');
       return;
     }
 
@@ -158,13 +177,18 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
         <h2 className="font-semibold text-gray-900">
           {selectedCount} of {items.length} item(s) selected
         </h2>
-        <button
-          type="button"
-          onClick={() => setAllSelected(!allSelected)}
-          className="text-sm font-medium text-brand-700 hover:underline"
-        >
-          {allSelected ? 'Deselect all' : 'Select all'}
-        </button>
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={addItem} className="text-sm font-medium text-brand-700 hover:underline">
+            + Add item
+          </button>
+          <button
+            type="button"
+            onClick={() => setAllSelected(!allSelected)}
+            className="text-sm font-medium text-brand-700 hover:underline"
+          >
+            {allSelected ? 'Deselect all' : 'Select all'}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -181,11 +205,13 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
                 <div className="flex-1">
                   <Input
                     className="mb-2 font-medium"
+                    placeholder="Item title"
                     value={item.title}
                     onChange={(e) => updateItem(item.id, { title: e.target.value })}
                   />
                   <Textarea
                     rows={2}
+                    placeholder="Describe the repair needed"
                     value={item.description}
                     onChange={(e) => updateItem(item.id, { description: e.target.value })}
                   />

@@ -291,6 +291,10 @@ model Quote {
   requestId            String
   proProfileId         String
   priceCents           Int
+  // Whether priceCents is the pro's firm bid or a rough estimate subject to
+  // change once they're on site — shown to the customer as a label, not
+  // enforced any differently (same field, same accept flow either way).
+  isEstimate           Boolean     @default(false)
   message              String      @db.Text
   estimatedDurationDays Int?
   status               QuoteStatus @default(PENDING)

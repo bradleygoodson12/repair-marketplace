@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 
+import { formatCents } from '@/lib/utils';
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Resend's default sandbox sender (no domain verification needed) only
@@ -23,7 +25,7 @@ function layout(heading: string, bodyHtml: string, ctaUrl: string, ctaLabel: str
     <div style="font-size:14px; line-height:1.6; color:#3f3f46;">${bodyHtml}</div>
     <a href="${ctaUrl}" style="display:inline-block; margin-top:20px; background:#f0b429; color:#09090b; padding:11px 22px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px;">${ctaLabel}</a>
   </div>
-  <div style="padding:16px 24px; background:#fafafa; color:#a1a1aa; font-size:12px;">Repair Bee &middot; You're receiving this because you have an active pro account.</div>
+  <div style="padding:16px 24px; background:#fafafa; color:#a1a1aa; font-size:12px;">Repair Bee &middot; You're receiving this because of activity on your Repair Bee account.</div>
 </div>`;
 }
 
@@ -80,6 +82,29 @@ export async function sendNewMessageEmail(params: {
        <p style="margin:0; padding:12px; background:#fafafa; border-radius:8px; white-space:pre-wrap;">${preview}</p>`,
       url,
       'Reply',
+    ),
+  );
+}
+
+export async function sendQuoteSubmittedEmail(params: {
+  to: string;
+  requestTitle: string;
+  businessName: string;
+  priceCents: number;
+  isEstimate: boolean;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  const amountLabel = params.isEstimate ? `Estimate: ${formatCents(params.priceCents)}` : formatCents(params.priceCents);
+  await sendEmail(
+    params.to,
+    `New quote submitted — "${params.requestTitle}"`,
+    layout(
+      'A quote has been submitted',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> submitted a quote for <strong>${params.requestTitle}</strong>.</p>
+       <p style="margin:0;">${amountLabel}</p>`,
+      url,
+      'View quote',
     ),
   );
 }

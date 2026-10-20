@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { NextResponse, after } from 'next/server';
 import type Stripe from 'stripe';
 
-import { sendSubscriptionPastDueEmail } from '@/lib/email';
+import { sendQuoteSubmittedEmail, sendSubscriptionPastDueEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
@@ -42,12 +42,40 @@ async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) 
   const { kind, quoteId } = checkoutSession.metadata ?? {};
   if (kind !== 'quote_fee' || !quoteId) return;
 
+  const existing = await prisma.quote.findUnique({ where: { id: quoteId } });
+  if (!existing) return;
+  // Stripe delivers webhooks at-least-once — a quote already marked paid
+  // means this is a duplicate delivery, so skip re-notifying the customer.
+  const alreadyPaid = !!existing.quoteFeePaidAt;
+
   const quote = await prisma.quote.update({
     where: { id: quoteId },
     data: { quoteFeePaidAt: new Date(), stripeSessionId: checkoutSession.id },
+    include: { request: { include: { customer: true } }, proProfile: true },
   });
 
   await prisma.serviceRequest.update({ where: { id: quote.requestId }, data: { status: 'QUOTED' } });
+
+  if (alreadyPaid) return;
+
+  after(() =>
+    sendQuoteSubmittedEmail({
+      to: quote.request.customer.email,
+      requestTitle: quote.request.title,
+      businessName: quote.proProfile.businessName,
+      priceCents: quote.priceCents,
+      isEstimate: quote.isEstimate,
+      requestId: quote.requestId,
+    }),
+  );
+  after(() =>
+    notify({
+      userId: quote.request.customerId,
+      type: 'QUOTE_SUBMITTED',
+      title: `New quote submitted: ${quote.request.title}`,
+      url: `/requests/${quote.requestId}`,
+    }),
+  );
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {

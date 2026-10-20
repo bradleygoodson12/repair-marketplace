@@ -1,14 +1,17 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { sendQuoteSubmittedEmail } from '@/lib/email';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
 import { createQuoteFeeCheckoutSession } from '@/lib/quote-fee';
 
 const schema = z.object({
   priceCents: z.number().int().positive(),
+  isEstimate: z.boolean().optional().default(false),
   message: z.string().min(1),
   estimatedDurationDays: z.number().int().positive().nullable().optional(),
 });
@@ -28,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Your profile must be verified before you can submit quotes.' }, { status: 403 });
   }
 
-  const request = await prisma.serviceRequest.findUnique({ where: { id } });
+  const request = await prisma.serviceRequest.findUnique({ where: { id }, include: { customer: true } });
   if (!request) {
     return NextResponse.json({ error: 'Request not found.' }, { status: 404 });
   }
@@ -52,6 +55,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const isActiveSubscriber = proProfile.subscriptionStatus === 'ACTIVE';
   const quoteFeeRequiredCents = isActiveSubscriber ? null : QUOTE_PRICE_CENTS;
   const keepsPriorPayment = !!existingQuote?.quoteFeePaidAt && existingQuote.quoteFeeRequiredCents === quoteFeeRequiredCents;
+  // Only notify the customer the first time their quote becomes visible —
+  // not on every edit of a quote that's already live.
+  const wasLive = !!existingQuote && (!existingQuote.quoteFeeRequiredCents || !!existingQuote.quoteFeePaidAt);
 
   const quote = await prisma.quote.upsert({
     where: { requestId_proProfileId: { requestId: request.id, proProfileId: proProfile.id } },
@@ -85,6 +91,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   await prisma.serviceRequest.update({ where: { id: request.id }, data: { status: 'QUOTED' } });
+
+  if (!wasLive) {
+    after(() =>
+      sendQuoteSubmittedEmail({
+        to: request.customer.email,
+        requestTitle: request.title,
+        businessName: proProfile.businessName,
+        priceCents: quote.priceCents,
+        isEstimate: quote.isEstimate,
+        requestId: request.id,
+      }),
+    );
+    after(() =>
+      notify({
+        userId: request.customerId,
+        type: 'QUOTE_SUBMITTED',
+        title: `New quote submitted: ${request.title}`,
+        url: `/requests/${request.id}`,
+      }),
+    );
+  }
 
   return NextResponse.json({ id: quote.id });
 }

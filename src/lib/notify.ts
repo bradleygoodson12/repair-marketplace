@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 type NotificationType =
   | 'NEW_LEAD'
   | 'NEW_MESSAGE'
+  | 'QUOTE_SUBMITTED'
   | 'QUOTE_ACCEPTED'
   | 'PRO_VERIFIED'
   | 'BOOKING_CANCELLED'

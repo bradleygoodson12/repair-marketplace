@@ -28,6 +28,7 @@ export function QuoteForm({
 }) {
   const router = useRouter();
   const [priceDollars, setPriceDollars] = useState('');
+  const [isEstimate, setIsEstimate] = useState(false);
   const [message, setMessage] = useState(defaultMessage ?? '');
   const [durationDays, setDurationDays] = useState(defaultDurationDays?.toString() ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function QuoteForm({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         priceCents: Math.round(parseFloat(priceDollars) * 100),
+        isEstimate,
         message,
         estimatedDurationDays: durationDays ? parseInt(durationDays, 10) : null,
       }),
@@ -100,6 +102,19 @@ export function QuoteForm({
           value={priceDollars}
           onChange={(e) => setPriceDollars(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Is this price exact or an estimate?</label>
+        <div className="flex gap-4 text-sm text-gray-700">
+          <label className="flex items-center gap-1.5">
+            <input type="radio" checked={!isEstimate} onChange={() => setIsEstimate(false)} />
+            Exact price
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="radio" checked={isEstimate} onChange={() => setIsEstimate(true)} />
+            Estimate (subject to change)
+          </label>
+        </div>
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Estimated duration (days)</label>

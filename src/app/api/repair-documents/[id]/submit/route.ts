@@ -55,10 +55,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { property, items, supportingDocumentUrls, budgetMinCents, budgetMaxCents, preferredDate } = parsed.data;
 
+  // An id not among this document's AI-extracted line items is one the
+  // customer added by hand on the review page — created fresh below instead
+  // of updating an existing RepairLineItem.
   const validLineItemIds = new Set(document.lineItems.map((li) => li.id));
-  if (items.some((i) => !validLineItemIds.has(i.id))) {
-    return NextResponse.json({ error: 'One or more items do not belong to this document.' }, { status: 400 });
-  }
 
   const categoryIds = new Set(items.map((i) => i.categoryId));
   const validCategoryCount = await prisma.category.count({ where: { id: { in: [...categoryIds] } } });
@@ -97,16 +97,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           preferredDate: preferredDate ? new Date(preferredDate) : null,
         },
       });
-      await tx.repairLineItem.update({
-        where: { id: item.id },
-        data: {
-          categoryId: item.categoryId,
-          title: item.title,
-          description: item.description,
-          photoUrls: item.photoUrls,
-          serviceRequestId: request.id,
-        },
-      });
+      if (validLineItemIds.has(item.id)) {
+        await tx.repairLineItem.update({
+          where: { id: item.id },
+          data: {
+            categoryId: item.categoryId,
+            title: item.title,
+            description: item.description,
+            photoUrls: item.photoUrls,
+            serviceRequestId: request.id,
+          },
+        });
+      } else {
+        await tx.repairLineItem.create({
+          data: {
+            repairDocumentId: document.id,
+            rawText: item.title,
+            title: item.title,
+            description: item.description,
+            categoryId: item.categoryId,
+            photoUrls: item.photoUrls,
+            serviceRequestId: request.id,
+          },
+        });
+      }
       created.push({ id: request.id, title: request.title });
     }
     await tx.repairDocument.update({

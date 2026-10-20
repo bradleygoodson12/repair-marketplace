@@ -100,7 +100,10 @@ export default async function ProJobHistoryPage({
                       {q.request.property.city}, {q.request.property.state} · Quoted {formatDate(q.createdAt)}
                     </p>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">{formatCents(q.priceCents)}</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {formatCents(q.priceCents)}
+                    {q.isEstimate && <span className="ml-1 text-xs font-normal text-gray-400">(estimate)</span>}
+                  </span>
                 </CardContent>
               </Card>
             </Link>

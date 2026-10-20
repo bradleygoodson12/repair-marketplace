@@ -12,6 +12,7 @@ import { formatCents } from '@/lib/utils';
 interface QuoteData {
   id: string;
   priceCents: number;
+  isEstimate: boolean;
   message: string;
   estimatedDurationDays: number | null;
   status: string;
@@ -109,7 +110,14 @@ export function QuotesList({
                 </div>
 
                 <div className="flex items-baseline justify-between border-t border-gray-100 pt-3">
-                  <span className="text-xl font-bold text-gray-900">{formatCents(q.priceCents)}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-gray-900">{formatCents(q.priceCents)}</span>
+                    {q.isEstimate && (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                        Estimate
+                      </span>
+                    )}
+                  </span>
                   <span className="text-sm text-gray-500">
                     {q.estimatedDurationDays ? `~${q.estimatedDurationDays} day(s)` : 'Duration not given'}
                   </span>
