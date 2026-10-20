@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs/config');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -9,4 +11,16 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Source map upload (and the org/project/authToken below) only runs when
+// SENTRY_AUTH_TOKEN is set in CI/production — harmless no-op locally and in
+// any environment without a Sentry project configured yet.
+module.exports = withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  telemetry: false,
+  widenClientFileUpload: true,
+  disableLogger: true,
+  automaticVercelMonitors: false,
+});
