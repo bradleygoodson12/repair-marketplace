@@ -64,6 +64,12 @@ export function ProProfileForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (categoryIds.length === 0) {
+      setError('Select at least one service category — pick every category you can legally and safely perform.');
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch('/api/pro-profile', {
@@ -145,7 +151,16 @@ export function ProProfileForm({
         </div>
       </div>
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">Service categories</label>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="block text-sm font-medium text-gray-700">Service categories</label>
+          <span className="text-xs font-medium text-gray-500">{categoryIds.length} selected</span>
+        </div>
+        <p className="mb-2 text-xs text-gray-500">
+          Select every category you're qualified and legally able to perform — not just your main trade. Leads are
+          matched by category, so a fuller list means more matching leads. Only select a category if you can legally
+          and safely do that work in your state (some, like electrical or HVAC, typically require a license — check
+          your own state's rules).
+        </p>
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
             <button
