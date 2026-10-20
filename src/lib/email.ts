@@ -41,6 +41,34 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
+export async function sendVerificationEmail(params: { to: string; token: string }) {
+  const url = `${origin()}/verify-email?token=${params.token}`;
+  await sendEmail(
+    params.to,
+    'Verify your email for Repair Bee',
+    layout(
+      'Confirm your email address',
+      `<p style="margin:0;">Click below to verify your email and activate your Repair Bee account. This link expires in 24 hours.</p>`,
+      url,
+      'Verify email',
+    ),
+  );
+}
+
+export async function sendPasswordResetEmail(params: { to: string; token: string }) {
+  const url = `${origin()}/reset-password?token=${params.token}`;
+  await sendEmail(
+    params.to,
+    'Reset your Repair Bee password',
+    layout(
+      'Reset your password',
+      `<p style="margin:0;">Click below to choose a new password. This link expires in 1 hour. If you didn't request this, you can ignore this email — your password won't change.</p>`,
+      url,
+      'Reset password',
+    ),
+  );
+}
+
 export async function sendNewLeadEmail(params: {
   to: string;
   businessName: string;

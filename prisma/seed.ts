@@ -70,6 +70,7 @@ async function main() {
       email: 'admin@example.com',
       passwordHash,
       role: 'ADMIN',
+      emailVerified: new Date(),
     },
   });
 
@@ -81,6 +82,7 @@ async function main() {
       email: 'customer@example.com',
       passwordHash,
       role: 'CUSTOMER',
+      emailVerified: new Date(),
     },
   });
 
@@ -108,7 +110,7 @@ async function main() {
     const user = await prisma.user.upsert({
       where: { email: p.email },
       update: {},
-      create: { name: p.name, email: p.email, passwordHash, role: 'PRO' },
+      create: { name: p.name, email: p.email, passwordHash, role: 'PRO', emailVerified: new Date() },
     });
 
     const profile = await prisma.proProfile.upsert({

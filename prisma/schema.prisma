@@ -55,6 +55,11 @@ enum DocumentStatus {
   SUBMITTED
 }
 
+enum AuthTokenKind {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -62,6 +67,11 @@ model User {
   passwordHash  String
   role          Role      @default(CUSTOMER)
   suspended     Boolean   @default(false)
+  // Null until the owner clicks the link from their verification email —
+  // login is blocked until then (see authorize() in lib/auth.ts). Pre-existing
+  // and seeded accounts are backfilled so this requirement only applies
+  // going forward, not retroactively.
+  emailVerified DateTime?
   image         String?
   phone         String?
   createdAt     DateTime  @default(now())
@@ -79,8 +89,25 @@ model User {
   reportsFiled    Report[]       @relation("ReportsFiled")
   reportsReceived Report[]       @relation("ReportsReceived")
   notifications   Notification[]
+  authTokens      AuthToken[]
 
   @@index([email])
+}
+
+// Single-use tokens backing email verification and password reset — a
+// cryptographically random string (not a cuid, which isn't meant to be
+// secret), short-lived, deleted once consumed.
+model AuthToken {
+  id        String        @id @default(cuid())
+  userId    String
+  kind      AuthTokenKind
+  token     String        @unique
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
 }
 
 model Account {

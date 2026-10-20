@@ -1,8 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { AuthShell } from '@/components/auth-shell';
@@ -11,13 +9,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input, Select } from '@/components/ui/input';
 
 export default function SignupPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'CUSTOMER' | 'PRO'>('CUSTOMER');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,24 +27,36 @@ export default function SignupPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, role }),
     });
+    setLoading(false);
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setError(data.error?.formErrors?.join(', ') || data.error || 'Something went wrong.');
-      setLoading(false);
       return;
     }
 
-    const signInRes = await signIn('credentials', { email, password, redirect: false });
-    setLoading(false);
+    setRegistered(true);
+  }
 
-    if (signInRes?.error) {
-      router.push('/login');
-      return;
-    }
-
-    router.push(role === 'PRO' ? '/dashboard/pro' : '/dashboard/customer');
-    router.refresh();
+  if (registered) {
+    return (
+      <AuthShell>
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8">
+            <h1 className="mb-3 text-2xl font-bold text-gray-900">Check your email</h1>
+            <p className="text-sm text-gray-600">
+              We sent a verification link to <strong>{email}</strong>. Click it to activate your account, then log
+              in.
+            </p>
+            <p className="mt-4 text-sm text-gray-600">
+              <Link href="/login" className="font-medium text-brand-600 hover:underline">
+                Go to log in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </AuthShell>
+    );
   }
 
   return (

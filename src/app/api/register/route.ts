@@ -1,9 +1,13 @@
 import bcrypt from 'bcryptjs';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
+import { createAuthToken } from '@/lib/auth-tokens';
+import { sendVerificationEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+
+const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
 const schema = z.object({
   name: z.string().min(1),
@@ -35,6 +39,11 @@ export async function POST(req: Request) {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: { name, email: normalizedEmail, passwordHash, role },
+  });
+
+  after(async () => {
+    const token = await createAuthToken(user.id, 'EMAIL_VERIFY', EMAIL_VERIFY_TTL_MS);
+    await sendVerificationEmail({ to: user.email, token });
   });
 
   return NextResponse.json({ id: user.id, email: user.email });

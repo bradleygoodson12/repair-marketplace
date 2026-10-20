@@ -33,7 +33,11 @@ export const authOptions: NextAuthOptions = {
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
-        if (user.suspended) return null;
+        // Past this point the password was correct, so throwing a specific
+        // reason doesn't leak whether an email is registered — only a
+        // correct-password attempt reaches here.
+        if (user.suspended) throw new Error('ACCOUNT_SUSPENDED');
+        if (!user.emailVerified) throw new Error('EMAIL_NOT_VERIFIED');
 
         return { id: user.id, name: user.name, email: user.email, role: user.role };
       },

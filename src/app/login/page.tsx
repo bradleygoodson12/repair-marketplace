@@ -10,27 +10,43 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
+const ERROR_MESSAGES: Record<string, string> = {
+  EMAIL_NOT_VERIFIED: 'Please verify your email before logging in — check your inbox for the link.',
+  ACCOUNT_SUSPENDED: 'This account has been suspended. Contact support if you think this is a mistake.',
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResendSent(false);
 
     const res = await signIn('credentials', { email, password, redirect: false });
     setLoading(false);
 
     if (res?.error) {
-      setError('Invalid email or password.');
+      setError(ERROR_MESSAGES[res.error] ?? 'Invalid email or password.');
       return;
     }
     router.push('/');
     router.refresh();
+  }
+
+  async function handleResend() {
+    await fetch('/api/auth/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    setResendSent(true);
   }
 
   return (
@@ -44,7 +60,12 @@ export default function LoginPage() {
               <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <Link href="/forgot-password" className="text-xs font-medium text-brand-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 type="password"
                 required
@@ -52,7 +73,20 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-600">
+                {error}
+                {error === ERROR_MESSAGES.EMAIL_NOT_VERIFIED && !resendSent && (
+                  <>
+                    {' '}
+                    <button type="button" onClick={handleResend} className="font-medium underline">
+                      Resend verification email
+                    </button>
+                  </>
+                )}
+                {resendSent && <span className="block text-gray-600">Verification email sent — check your inbox.</span>}
+              </p>
+            )}
             <Button type="submit" disabled={loading}>
               {loading ? 'Logging in…' : 'Log in'}
             </Button>
