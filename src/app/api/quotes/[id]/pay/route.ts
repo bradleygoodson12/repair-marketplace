@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createQuoteFeeCheckoutSession } from '@/lib/quote-fee';
+import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
 
 // Retry endpoint for a pro who left mid-checkout — the quote already
 // exists (unpaid), this just re-opens a Stripe Checkout session for it.
@@ -30,13 +31,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'This quote fee is already paid.' }, { status: 409 });
   }
 
-  const checkoutUrl = await createQuoteFeeCheckoutSession({
-    quoteId: quote.id,
-    requestId: quote.requestId,
-    requestTitle: quote.request.title,
-    stripeCustomerId: proProfile.stripeCustomerId,
-    userEmail: session.user.email ?? null,
-  });
-
-  return NextResponse.json({ url: checkoutUrl });
+  try {
+    const stripeCustomerId = await getOrCreateStripeCustomerId(proProfile, session.user.email ?? '');
+    const checkoutUrl = await createQuoteFeeCheckoutSession({
+      quoteId: quote.id,
+      requestId: quote.requestId,
+      requestTitle: quote.request.title,
+      stripeCustomerId,
+    });
+    return NextResponse.json({ url: checkoutUrl });
+  } catch (error) {
+    console.error('Failed to start quote fee checkout', error);
+    return NextResponse.json({ error: 'Could not start payment — try again shortly.' }, { status: 502 });
+  }
 }

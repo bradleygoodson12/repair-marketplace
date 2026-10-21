@@ -9,16 +9,14 @@ export async function createQuoteFeeCheckoutSession(params: {
   quoteId: string;
   requestId: string;
   requestTitle: string;
-  stripeCustomerId: string | null;
-  userEmail: string | null;
+  stripeCustomerId: string;
 }) {
   const origin = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
-    customer_email: params.stripeCustomerId ? undefined : params.userEmail ?? undefined,
-    customer: params.stripeCustomerId ?? undefined,
+    customer: params.stripeCustomerId,
     line_items: [
       {
         price_data: {

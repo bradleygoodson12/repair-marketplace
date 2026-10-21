@@ -8,6 +8,7 @@ import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
 import { createQuoteFeeCheckoutSession } from '@/lib/quote-fee';
+import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
 
 const schema = z.object({
   priceCents: z.number().int().positive(),
@@ -80,14 +81,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // customer and other pros until payment clears (see requests/[id]/page.tsx
   // and the stripe webhook's handleQuoteFeeCheckout).
   if (quoteFeeRequiredCents && !quote.quoteFeePaidAt) {
-    const checkoutUrl = await createQuoteFeeCheckoutSession({
-      quoteId: quote.id,
-      requestId: request.id,
-      requestTitle: request.title,
-      stripeCustomerId: proProfile.stripeCustomerId,
-      userEmail: session.user.email ?? null,
-    });
-    return NextResponse.json({ id: quote.id, checkoutUrl });
+    try {
+      const stripeCustomerId = await getOrCreateStripeCustomerId(proProfile, session.user.email ?? '');
+      const checkoutUrl = await createQuoteFeeCheckoutSession({
+        quoteId: quote.id,
+        requestId: request.id,
+        requestTitle: request.title,
+        stripeCustomerId,
+      });
+      return NextResponse.json({ id: quote.id, checkoutUrl });
+    } catch (error) {
+      console.error('Failed to start quote fee checkout', error);
+      return NextResponse.json(
+        { id: quote.id, error: 'Your quote is saved, but payment could not be started — try again shortly.' },
+        { status: 502 },
+      );
+    }
   }
 
   await prisma.serviceRequest.update({ where: { id: request.id }, data: { status: 'QUOTED' } });

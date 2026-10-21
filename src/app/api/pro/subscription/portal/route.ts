@@ -18,10 +18,14 @@ export async function POST() {
 
   const origin = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: proProfile.stripeCustomerId,
-    return_url: `${origin}/dashboard/pro`,
-  });
-
-  return NextResponse.json({ url: portalSession.url });
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: proProfile.stripeCustomerId,
+      return_url: `${origin}/dashboard/pro`,
+    });
+    return NextResponse.json({ url: portalSession.url });
+  } catch (error) {
+    console.error('Failed to create billing portal session', error);
+    return NextResponse.json({ error: 'Could not open billing portal — try again shortly.' }, { status: 502 });
+  }
 }
