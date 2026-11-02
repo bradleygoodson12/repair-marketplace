@@ -169,6 +169,10 @@ model ProProfile {
   // silently send a wrong number.
   defaultQuoteMessage  String?  @db.Text
   defaultDurationDays  Int?
+  // Set by the daily stale-bidding check (api/cron/check-stale-bids) when
+  // this pro is flagged for not bidding on matching leads — throttles
+  // repeat admin alerts about the same pro to once a week.
+  lastBiddingAlertAt   DateTime?
   // Business photo shown on the public pro profile — distinct from the
   // underlying User's own account photo, since a pro's storefront image
   // isn't necessarily a headshot.

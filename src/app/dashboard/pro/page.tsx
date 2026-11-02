@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
@@ -10,6 +11,7 @@ import { zipDistanceMiles } from '@/lib/zip';
 
 import { EditProfileToggle } from './edit-profile-toggle';
 import { LeadCard } from './lead-card';
+import { PaymentStatusBanner } from './payment-status-banner';
 import { ProProfileForm } from './profile-form';
 import { QuoteDefaultsForm } from './quote-defaults-form';
 import { QuickQuoteTemplatesCard } from './quick-quote-templates-card';
@@ -72,6 +74,10 @@ export default async function ProDashboardPage() {
     );
   }
 
+  const unreadNotifications = await prisma.notification.count({
+    where: { userId: session.user.id, read: false },
+  });
+
   const categoryIds = proProfile.categories.map((c) => c.categoryId);
   const candidateLeads = await prisma.serviceRequest.findMany({
     where: {
@@ -95,6 +101,9 @@ export default async function ProDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
+      <Suspense fallback={null}>
+        <PaymentStatusBanner />
+      </Suspense>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {proProfile.photoUrl ? (
@@ -118,6 +127,14 @@ export default async function ProDashboardPage() {
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center gap-4">
+          <Link href="/notifications" className="text-sm font-medium text-brand-600 hover:underline">
+            Notifications
+            {unreadNotifications > 0 && (
+              <span className="ml-1.5 rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-gray-950">
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              </span>
+            )}
+          </Link>
           <Link href="/dashboard/pro/history" className="text-sm font-medium text-brand-600 hover:underline">
             Job history
           </Link>

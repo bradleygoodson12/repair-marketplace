@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { NotificationBell } from '@/components/notification-bell';
+import { UserMenu } from '@/components/user-menu';
 
 const navLinks = [
   { href: '/categories', label: 'Browse services' },
@@ -17,6 +18,14 @@ export function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // For a logged-in customer/agent, "How it works" and "Become a pro" move
+  // into their name dropdown instead of sitting in the main nav — pros and
+  // logged-out visitors still see the full list up top.
+  const topNavLinks =
+    session?.user.role === 'CUSTOMER'
+      ? navLinks.filter((l) => l.href !== '/how-it-works' && l.href !== '/pro/signup')
+      : navLinks;
+
   return (
     <header className="bg-gray-950">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
@@ -25,7 +34,7 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-gray-300 md:flex">
-          {navLinks.map((link) => (
+          {topNavLinks.map((link) => (
             <Link key={link.href} href={link.href} className="transition-colors hover:text-white">
               {link.label}
             </Link>
@@ -35,28 +44,7 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-3 md:flex">
             {session ? (
-              <>
-                {session.user.role === 'ADMIN' ? (
-                  <Link href="/admin" className="text-sm font-medium text-gray-300 hover:text-white">
-                    Admin
-                  </Link>
-                ) : (
-                  <Link
-                    href={session.user.role === 'PRO' ? '/dashboard/pro' : '/dashboard/customer'}
-                    className="text-sm font-medium text-gray-300 hover:text-white"
-                  >
-                    Dashboard
-                  </Link>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="border-gray-700 bg-transparent text-white hover:border-gray-500 hover:bg-gray-900"
-                >
-                  Sign out
-                </Button>
-              </>
+              <UserMenu name={session.user.name ?? session.user.email ?? 'there'} role={session.user.role} />
             ) : (
               <>
                 <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white">

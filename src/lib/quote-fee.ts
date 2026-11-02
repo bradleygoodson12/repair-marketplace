@@ -1,4 +1,5 @@
 import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
+import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 
 // Shared by the initial quote submission (which creates the checkout
@@ -13,10 +14,30 @@ export async function createQuoteFeeCheckoutSession(params: {
 }) {
   const origin = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
+  // A double-click, a second tab, or re-opening "pay" before the first
+  // attempt finished could otherwise mint a second valid Checkout Session —
+  // and if the pro completes both, they're charged twice. Reuse a still-open
+  // one instead of creating a new one whenever possible.
+  const existing = await prisma.quote.findUnique({
+    where: { id: params.quoteId },
+    select: { stripeSessionId: true },
+  });
+  if (existing?.stripeSessionId) {
+    try {
+      const existingSession = await stripe.checkout.sessions.retrieve(existing.stripeSessionId);
+      if (existingSession.status === 'open' && existingSession.url) {
+        return existingSession.url;
+      }
+    } catch {
+      // Session not found or unreadable — fall through and create a new one.
+    }
+  }
+
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
     customer: params.stripeCustomerId,
+    submit_type: 'pay',
     line_items: [
       {
         price_data: {
@@ -28,9 +49,11 @@ export async function createQuoteFeeCheckoutSession(params: {
       },
     ],
     metadata: { kind: 'quote_fee', quoteId: params.quoteId },
-    success_url: `${origin}/requests/${params.requestId}?quote=paid`,
+    success_url: `${origin}/dashboard/pro?quote=paid`,
     cancel_url: `${origin}/requests/${params.requestId}?quote=payment_cancelled`,
   });
+
+  await prisma.quote.update({ where: { id: params.quoteId }, data: { stripeSessionId: checkoutSession.id } });
 
   return checkoutSession.url;
 }

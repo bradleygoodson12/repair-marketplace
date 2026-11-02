@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 export function PayQuoteFeeButton({
   quoteId,
   priceDollars,
-  size = 'sm',
+  size = 'md',
   className,
 }: {
   quoteId: string;
@@ -37,7 +37,7 @@ export function PayQuoteFeeButton({
   return (
     <div className={className}>
       <Button type="button" size={size} onClick={handleClick} disabled={loading}>
-        {loading ? 'Redirecting…' : `Pay quote fee — $${priceDollars}`}
+        {loading ? 'Redirecting…' : `Pay $${priceDollars} to send quote`}
       </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

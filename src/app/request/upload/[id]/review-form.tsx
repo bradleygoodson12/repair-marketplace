@@ -4,6 +4,7 @@ import type { RepairLineItem } from '@prisma/client';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { AddressAutocompleteInput } from '@/components/address-autocomplete-input';
 import { AttachmentThumb } from '@/components/attachment-thumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -163,7 +164,17 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
         <CardContent>
           <h2 className="mb-3 font-semibold text-gray-900">Property address</h2>
           <div className="flex flex-col gap-3">
-            <Input placeholder="Street address" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} />
+            <AddressAutocompleteInput
+              value={addressLine1}
+              onChange={setAddressLine1}
+              placeholder="Street address"
+              onSelect={(address) => {
+                setAddressLine1(address.addressLine1);
+                if (address.city) setCity(address.city);
+                if (address.state) setState(address.state);
+                if (address.zip) setZip(address.zip);
+              }}
+            />
             <div className="grid grid-cols-3 gap-3">
               <Input placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
               <Input placeholder="State" value={state} onChange={(e) => setState(e.target.value)} />

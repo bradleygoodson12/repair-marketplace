@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { AddressAutocompleteInput } from '@/components/address-autocomplete-input';
 import { Button } from '@/components/ui/button';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { PhotoUploader } from '@/components/photo-uploader';
@@ -233,7 +234,16 @@ export function RequestForm({
       )}
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Street address</label>
-        <Input required value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} />
+        <AddressAutocompleteInput
+          value={addressLine1}
+          onChange={setAddressLine1}
+          onSelect={(address) => {
+            setAddressLine1(address.addressLine1);
+            if (address.city) setCity(address.city);
+            if (address.state) setState(address.state);
+            if (address.zip) setZip(address.zip);
+          }}
+        />
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>

@@ -185,6 +185,21 @@ export async function sendProVerifiedEmail(params: { to: string; businessName: s
   );
 }
 
+export async function sendProNotBiddingAlertEmail(params: { to: string; businessName: string; reason: string }) {
+  const url = `${origin()}/admin/pros`;
+  await sendEmail(
+    params.to,
+    `Pro not bidding: ${params.businessName}`,
+    layout(
+      'A verified pro has gone quiet',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> ${params.reason}</p>
+       <p style="margin:0;">Worth a check-in — they may be overwhelmed, have availability issues, or need a nudge.</p>`,
+      url,
+      'Review pros',
+    ),
+  );
+}
+
 export async function sendNewProPendingEmail(params: { to: string; businessName: string }) {
   const url = `${origin()}/admin/pros`;
   await sendEmail(
