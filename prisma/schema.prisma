@@ -416,6 +416,21 @@ model Booking {
   request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   review  Review?
+  updates ProjectUpdate[]
+}
+
+// A progress update the pro posts while a booking is active — a short note
+// plus any number of photos, shown to the customer in chronological order.
+model ProjectUpdate {
+  id        String   @id @default(cuid())
+  bookingId String
+  note      String   @db.Text
+  photoUrls String[] @default([])
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 model Message {

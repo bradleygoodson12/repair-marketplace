@@ -16,6 +16,7 @@ import { CancelBookingButton } from './cancel-booking-button';
 import { CompleteButton } from './complete-button';
 import { MessagePoller } from './message-poller';
 import { MessageThread } from './message-thread';
+import { PostUpdateForm } from './post-update-form';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
 import { ReviewForm } from './review-form';
@@ -32,7 +33,13 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
       property: true,
       customer: true,
       quotes: { include: { proProfile: true }, orderBy: { priceCents: 'asc' } },
-      booking: { include: { quote: { include: { proProfile: true } }, review: true } },
+      booking: {
+        include: {
+          quote: { include: { proProfile: true } },
+          review: true,
+          updates: { orderBy: { createdAt: 'asc' } },
+        },
+      },
       messages: { include: { sender: true }, orderBy: { createdAt: 'asc' } },
     },
   });
@@ -181,6 +188,34 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               <div className="mt-2">
                 <h3 className="mb-2 text-sm font-semibold text-gray-900">Leave a review</h3>
                 <ReviewForm bookingId={request.booking.id} />
+              </div>
+            )}
+
+            {(request.booking.updates.length > 0 || isBookedPro) && (
+              <div className="mt-2 border-t border-gray-100 pt-3">
+                <h3 className="mb-2 text-sm font-semibold text-gray-900">Progress updates</h3>
+                {request.booking.updates.length === 0 ? (
+                  <p className="text-sm text-gray-500">No updates posted yet.</p>
+                ) : (
+                  <div className="mb-3 flex flex-col gap-3">
+                    {request.booking.updates.map((u) => (
+                      <div key={u.id} className="rounded-lg bg-gray-50 p-3">
+                        <p className="mb-1 text-xs text-gray-400">{formatDate(u.createdAt)}</p>
+                        <p className="whitespace-pre-wrap text-sm text-gray-700">{u.note}</p>
+                        {u.photoUrls.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-3">
+                            {u.photoUrls.map((url) => (
+                              <AttachmentThumb key={url} url={url} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {isBookedPro && (request.booking.status === 'SCHEDULED' || request.booking.status === 'IN_PROGRESS') && (
+                  <PostUpdateForm bookingId={request.booking.id} />
+                )}
               </div>
             )}
           </CardContent>

@@ -173,6 +173,28 @@ export async function sendRevisionRequestedEmail(params: {
   );
 }
 
+export async function sendProjectUpdateEmail(params: {
+  to: string;
+  requestTitle: string;
+  businessName: string;
+  note: string;
+  photoCount: number;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Progress update — "${params.requestTitle}"`,
+    layout(
+      'A new progress update was posted',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> posted an update on <strong>${params.requestTitle}</strong>${params.photoCount > 0 ? ` with ${params.photoCount} photo${params.photoCount === 1 ? '' : 's'}` : ''}:</p>
+       <p style="margin:0; padding:12px; background:#fafafa; border-radius:8px; white-space:pre-wrap;">${params.note}</p>`,
+      url,
+      'View update',
+    ),
+  );
+}
+
 export async function sendQuoteNotSelectedEmail(params: { to: string; requestTitle: string; requestId: string }) {
   const url = `${origin()}/requests/${params.requestId}`;
   await sendEmail(
