@@ -6,6 +6,7 @@ import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { deriveServiceLocation, hasOpenCapacity, offerNextWaitlistSpot } from '@/lib/capacity';
 import { sendNewProPendingEmail, sendProWelcomeEmail, sendWaitlistJoinedEmail } from '@/lib/email';
+import { isInLaunchArea, OUT_OF_LAUNCH_AREA_MESSAGE } from '@/lib/launch-area';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 
@@ -52,6 +53,10 @@ export async function POST(req: Request) {
   const location = deriveServiceLocation(profileData.serviceZip);
   if (!location) {
     return NextResponse.json({ error: 'That zip code was not recognized.' }, { status: 400 });
+  }
+
+  if (!isInLaunchArea(profileData.serviceZip)) {
+    return NextResponse.json({ error: OUT_OF_LAUNCH_AREA_MESSAGE }, { status: 403 });
   }
 
   // Capacity is only checked for categories genuinely new to this pro — an

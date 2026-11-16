@@ -8,9 +8,9 @@ import { prisma } from '@/lib/prisma';
 // pros per city — a deliberate supply limit to keep the platform
 // high-quality rather than flooding customers with dozens of competing
 // quotes. Scoped to city rather than globally or by zip: granular enough to
-// mean something ("5 plumbers in Austin"), without the overlapping-radius
+// mean something ("10 plumbers in Charleston"), without the overlapping-radius
 // math a zip-based cap would need.
-export const CATEGORY_CAPACITY_PER_CITY = 5;
+export const CATEGORY_CAPACITY_PER_CITY = 10;
 
 // How long an offered waitlist spot stays claimable before it's passed to
 // the next person in line (see api/cron/check-waitlist-expiry).

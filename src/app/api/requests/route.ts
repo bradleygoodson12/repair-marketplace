@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
+import { isInLaunchArea, OUT_OF_LAUNCH_AREA_MESSAGE } from '@/lib/launch-area';
 import { notifyMatchingPros } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -66,6 +67,10 @@ export async function POST(req: Request) {
   const category = await prisma.category.findUnique({ where: { id: categoryId } });
   if (!category) {
     return NextResponse.json({ error: 'Not a valid service category.' }, { status: 400 });
+  }
+
+  if (!isInLaunchArea(property.zip)) {
+    return NextResponse.json({ error: OUT_OF_LAUNCH_AREA_MESSAGE }, { status: 403 });
   }
 
   const request = await prisma.$transaction(async (tx) => {
