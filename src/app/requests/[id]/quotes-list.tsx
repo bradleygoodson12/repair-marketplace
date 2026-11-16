@@ -37,6 +37,10 @@ export function QuotesList({
 }) {
   const router = useRouter();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [revisionId, setRevisionId] = useState<string | null>(null);
+  const [revisionMessage, setRevisionMessage] = useState('');
+  const [requestingRevision, setRequestingRevision] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function acceptQuote(id: string) {
@@ -50,6 +54,43 @@ export function QuotesList({
       setError(typeof data.error === 'string' ? data.error : 'Could not accept quote.');
       return;
     }
+    router.refresh();
+  }
+
+  async function declineQuote(id: string) {
+    if (!confirm('Decline this quote? The pro will be notified.')) return;
+    setDecliningId(id);
+    setError(null);
+    const res = await fetch(`/api/quotes/${id}/decline`, { method: 'POST' });
+    setDecliningId(null);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === 'string' ? data.error : 'Could not decline quote.');
+      return;
+    }
+    router.refresh();
+  }
+
+  async function submitRevisionRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!revisionId || !revisionMessage.trim()) return;
+    setRequestingRevision(true);
+    setError(null);
+    const res = await fetch(`/api/quotes/${revisionId}/request-revision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: revisionMessage.trim() }),
+    });
+    setRequestingRevision(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === 'string' ? data.error : 'Could not send revision request.');
+      return;
+    }
+    setRevisionId(null);
+    setRevisionMessage('');
     router.refresh();
   }
 
@@ -127,9 +168,45 @@ export function QuotesList({
                 <p className="line-clamp-4 text-sm text-gray-600">{q.message}</p>
 
                 {isCustomer && !requestBooked && q.status === 'PENDING' && (
-                  <Button size="sm" className="mt-auto w-full" disabled={acceptingId === q.id} onClick={() => acceptQuote(q.id)}>
-                    {acceptingId === q.id ? 'Accepting…' : 'Accept quote'}
-                  </Button>
+                  <div className="mt-auto flex flex-col gap-2">
+                    <Button size="sm" className="w-full" disabled={acceptingId === q.id} onClick={() => acceptQuote(q.id)}>
+                      {acceptingId === q.id ? 'Accepting…' : 'Accept quote'}
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        disabled={decliningId === q.id}
+                        onClick={() => declineQuote(q.id)}
+                      >
+                        {decliningId === q.id ? 'Declining…' : 'Decline'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setRevisionId(revisionId === q.id ? null : q.id)}
+                      >
+                        Request revision
+                      </Button>
+                    </div>
+                    {revisionId === q.id && (
+                      <form onSubmit={submitRevisionRequest} className="flex flex-col gap-2">
+                        <textarea
+                          value={revisionMessage}
+                          onChange={(e) => setRevisionMessage(e.target.value)}
+                          placeholder="What would you like changed?"
+                          rows={3}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                          required
+                        />
+                        <Button type="submit" size="sm" className="w-full" disabled={requestingRevision}>
+                          {requestingRevision ? 'Sending…' : 'Send revision request'}
+                        </Button>
+                      </form>
+                    )}
+                  </div>
                 )}
               </div>
             );

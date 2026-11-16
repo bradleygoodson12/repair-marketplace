@@ -151,6 +151,28 @@ export async function sendRequestSubmittedEmail(params: { to: string; requestTit
   );
 }
 
+export async function sendRevisionRequestedEmail(params: {
+  to: string;
+  requestTitle: string;
+  customerName: string;
+  message: string;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Revision requested — "${params.requestTitle}"`,
+    layout(
+      'The customer asked for a change to your quote',
+      `<p style="margin:0 0 8px;">${params.customerName} would like a revision to your quote for <strong>${params.requestTitle}</strong>:</p>
+       <p style="margin:0; padding:12px; background:#fafafa; border-radius:8px; white-space:pre-wrap;">${params.message}</p>
+       <p style="margin:8px 0 0;">Update and resubmit your quote whenever you're ready — it replaces your current one.</p>`,
+      url,
+      'Update quote',
+    ),
+  );
+}
+
 export async function sendQuoteNotSelectedEmail(params: { to: string; requestTitle: string; requestId: string }) {
   const url = `${origin()}/requests/${params.requestId}`;
   await sendEmail(
