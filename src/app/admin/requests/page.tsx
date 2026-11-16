@@ -6,13 +6,30 @@ import { formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 import { CancelButton } from './cancel-button';
+import { InviteProForm } from './invite-pro-form';
 
 export default async function AdminRequestsPage() {
   const requests = await prisma.serviceRequest.findMany({
-    include: { category: true, customer: true },
+    include: { category: true, customer: true, quotes: { select: { proProfileId: true } } },
     orderBy: { createdAt: 'desc' },
     take: 100,
   });
+
+  // Fetched once for every category present on this page, rather than once
+  // per request row, to avoid N+1 queries on a 100-row listing.
+  const categoryIds = [...new Set(requests.map((r) => r.categoryId))];
+  const prosByCategory = new Map<string, { id: string; businessName: string }[]>();
+  if (categoryIds.length > 0) {
+    const proCategories = await prisma.proProfileCategory.findMany({
+      where: { categoryId: { in: categoryIds }, proProfile: { verified: true } },
+      include: { proProfile: { select: { id: true, businessName: true } } },
+    });
+    for (const pc of proCategories) {
+      const list = prosByCategory.get(pc.categoryId) ?? [];
+      list.push(pc.proProfile);
+      prosByCategory.set(pc.categoryId, list);
+    }
+  }
 
   return (
     <div>
@@ -33,7 +50,17 @@ export default async function AdminRequestsPage() {
                   {formatDate(r.createdAt)}
                 </p>
               </div>
-              {r.status !== 'CANCELLED' && <CancelButton requestId={r.id} />}
+              <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+                {(r.status === 'OPEN' || r.status === 'QUOTED') && (
+                  <InviteProForm
+                    requestId={r.id}
+                    pros={(prosByCategory.get(r.categoryId) ?? []).filter(
+                      (p) => !r.quotes.some((q) => q.proProfileId === p.id),
+                    )}
+                  />
+                )}
+                {r.status !== 'CANCELLED' && <CancelButton requestId={r.id} />}
+              </div>
             </CardContent>
           </Card>
         ))}

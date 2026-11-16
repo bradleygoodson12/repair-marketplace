@@ -195,6 +195,27 @@ export async function sendProjectUpdateEmail(params: {
   );
 }
 
+export async function sendProInvitedEmail(params: {
+  to: string;
+  businessName: string;
+  requestTitle: string;
+  categoryName: string;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `You've been invited to quote — "${params.requestTitle}"`,
+    layout(
+      'A job was sent your way',
+      `<p style="margin:0 0 8px;">Repair Bee thinks <strong>${params.businessName}</strong> would be a great fit for this ${params.categoryName} job:</p>
+       <p style="margin:0;"><strong>${params.requestTitle}</strong></p>`,
+      url,
+      'View & send a quote',
+    ),
+  );
+}
+
 export async function sendAppointmentScheduledEmail(params: {
   to: string;
   requestTitle: string;
