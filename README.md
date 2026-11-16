@@ -19,8 +19,8 @@ paying Repair Bee a monthly subscription for access.
 ## Core flow
 
 1. Customer posts a `ServiceRequest` tied to a `Property` (address) and a `Category`.
-2. Matching `ProProfile`s see the request as a lead. A subscribed pro can submit a `Quote`; an
-   unsubscribed pro sees a "subscribe to quote" prompt instead — see "Pro monetization" below.
+2. Matching `ProProfile`s see the request as a lead for free, regardless of billing mode. Submitting a
+   `Quote` is what's charged — see "Pro monetization" below.
 3. Customer accepts a quote → creates a `Booking` (tracks scheduling/status only, no payment).
 4. Customer pays the pro directly, however they agree to — cash, check, Venmo, the pro's own invoice.
    Repair Bee never touches that money and has no record of it.
@@ -31,22 +31,32 @@ paying Repair Bee a monthly subscription for access.
 
 ## Pro monetization
 
-Pros are never paid out through the app (no Stripe Connect, no payout compliance). Every pro must have
-an active subscription (`SUBSCRIPTION_PRICE_CENTS` in `src/lib/pricing.ts`, default $20/mo) to see leads
-or submit quotes at all — there's no pay-per-lead fallback, since pros are expected to be subscribed and
-admin-vetted (`ProProfile.verified`) before operating on the platform.
+Pros are never paid out through the app (no Stripe Connect, no payout compliance); every pro must still
+be admin-vetted (`ProProfile.verified`) before operating on the platform. All leads are visible to every
+verified pro for free — the only thing the app ever charges a pro for is actually submitting a `Quote`,
+via one of two billing modes (`ProProfile.billingMode`, see `src/lib/pricing.ts`):
 
-- Managed from the pro dashboard (`SubscriptionCard`) via `POST /api/pro/subscription/checkout` (Stripe
-  Checkout, `mode: subscription`) and `POST /api/pro/subscription/portal` (Stripe Billing Portal, for
-  cancel/update-card).
+- **Pay-per-quote** (default) — a flat `QUOTE_PRICE_CENTS` (default $5) Stripe Checkout charge
+  (`mode: payment`) each time a pro sends a quote, handled by `POST /api/quotes/[id]/pay`.
+- **Subscription** — `SUBSCRIPTION_PRICE_CENTS` (default $20/mo) for unlimited quoting, no per-quote fee.
+
+A pro can switch between the two from the dashboard (`SubscriptionCard`) via
+`POST /api/pro-profile/billing-mode`, `POST /api/pro/subscription/checkout` (Stripe Checkout,
+`mode: subscription`), and `POST /api/pro/subscription/portal` (Stripe Billing Portal, for
+cancel/update-card).
+
 - `ProProfile.subscriptionStatus`/`subscriptionCurrentPeriodEnd` are kept in sync by the
   `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`
   webhook handlers in `src/app/api/webhooks/stripe/route.ts`.
-- `POST /api/requests/[id]/quotes` (and the dashboard/request-page UI) checks
-  `proProfile.subscriptionStatus === 'ACTIVE'` before allowing a quote.
-- The price is created as an ad hoc Stripe `price_data` at checkout time rather than a pre-created
-  Stripe Price object — simplest for now, but means a Stripe dashboard price change has no effect;
-  update `src/lib/pricing.ts` instead.
+- `POST /api/requests/[id]/quotes` (and the dashboard/request-page UI) checks that a subscribed pro's
+  `subscriptionStatus === 'ACTIVE'`, or that a pay-per-quote pro has paid for that specific quote, before
+  allowing it.
+- Each category is also capped at `CATEGORY_CAPACITY_PER_CITY` (default 5) active, verified pros per
+  city (`src/lib/capacity.ts`); a pro who can't get an open slot can join a waitlist and gets a
+  time-limited offer by email when one frees up.
+- Both prices are created as ad hoc Stripe `price_data` at checkout time rather than pre-created Stripe
+  Price objects — simplest for now, but means a Stripe dashboard price change has no effect; update
+  `src/lib/pricing.ts` instead.
 
 ## Admin panel
 
