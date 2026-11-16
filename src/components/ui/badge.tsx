@@ -9,6 +9,7 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'bg-gray-100 text-gray-600',
   PENDING: 'bg-amber-100 text-amber-700',
   ACCEPTED: 'bg-green-100 text-green-700',
+  APPROVED: 'bg-green-100 text-green-700',
   DECLINED: 'bg-red-100 text-red-700',
   WITHDRAWN: 'bg-gray-100 text-gray-600',
   SCHEDULED: 'bg-purple-100 text-purple-700',

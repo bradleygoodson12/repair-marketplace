@@ -417,6 +417,35 @@ model Booking {
   quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   review  Review?
   updates ProjectUpdate[]
+  changeOrders ChangeOrder[]
+}
+
+enum ChangeOrderStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+// Additional work a pro proposes once a booking is already underway —
+// billed the same way as an initial quote (a flat fee per submission for a
+// pay-per-quote pro, free for a subscriber), and held back from the
+// customer until that fee clears, exactly like Quote.quoteFeeRequiredCents.
+// Approving bumps Booking.totalCents by additionalPriceCents.
+model ChangeOrder {
+  id                   String            @id @default(cuid())
+  bookingId            String
+  description          String            @db.Text
+  additionalPriceCents Int
+  status               ChangeOrderStatus @default(PENDING)
+  feeRequiredCents     Int?
+  feePaidAt            DateTime?
+  stripeSessionId      String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 // A progress update the pro posts while a booking is active — a short note

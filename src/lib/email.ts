@@ -195,6 +195,75 @@ export async function sendProjectUpdateEmail(params: {
   );
 }
 
+export async function sendChangeOrderSubmittedEmail(params: { to: string; requestTitle: string; requestId: string }) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Change order submitted — "${params.requestTitle}"`,
+    layout(
+      'Your change order is in',
+      `<p style="margin:0;">We've sent your change order for <strong>${params.requestTitle}</strong> to the customer for approval.</p>`,
+      url,
+      'View request',
+    ),
+  );
+}
+
+export async function sendChangeOrderApprovalRequestedEmail(params: {
+  to: string;
+  requestTitle: string;
+  businessName: string;
+  description: string;
+  additionalPriceCents: number;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Change order needs your approval — "${params.requestTitle}"`,
+    layout(
+      'Additional work proposed',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> proposed additional work on <strong>${params.requestTitle}</strong> for ${formatCents(params.additionalPriceCents)}:</p>
+       <p style="margin:0; padding:12px; background:#fafafa; border-radius:8px; white-space:pre-wrap;">${params.description}</p>`,
+      url,
+      'Review change order',
+    ),
+  );
+}
+
+export async function sendChangeOrderApprovedEmail(params: {
+  to: string;
+  requestTitle: string;
+  additionalPriceCents: number;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Change order approved — "${params.requestTitle}"`,
+    layout(
+      'The customer approved your change order',
+      `<p style="margin:0;">Your change order for <strong>${params.requestTitle}</strong> (${formatCents(params.additionalPriceCents)}) was approved.</p>`,
+      url,
+      'View request',
+    ),
+  );
+}
+
+export async function sendChangeOrderDeclinedEmail(params: { to: string; requestTitle: string; requestId: string }) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Change order declined — "${params.requestTitle}"`,
+    layout(
+      'The customer declined your change order',
+      `<p style="margin:0;">Your change order for <strong>${params.requestTitle}</strong> was declined.</p>`,
+      url,
+      'View request',
+    ),
+  );
+}
+
 export async function sendQuoteNotSelectedEmail(params: { to: string; requestTitle: string; requestId: string }) {
   const url = `${origin()}/requests/${params.requestId}`;
   await sendEmail(

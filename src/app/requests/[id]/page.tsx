@@ -12,7 +12,10 @@ import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
 import { formatCents, formatDate } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
+import { PayChangeOrderFeeButton } from '@/components/pay-change-order-fee-button';
+
 import { CancelBookingButton } from './cancel-booking-button';
+import { ChangeOrderActions } from './change-order-actions';
 import { CompleteButton } from './complete-button';
 import { MessagePoller } from './message-poller';
 import { MessageThread } from './message-thread';
@@ -20,6 +23,7 @@ import { PostUpdateForm } from './post-update-form';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
 import { ReviewForm } from './review-form';
+import { SubmitChangeOrderForm } from './submit-change-order-form';
 
 export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,6 +42,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           quote: { include: { proProfile: true } },
           review: true,
           updates: { orderBy: { createdAt: 'asc' } },
+          changeOrders: { orderBy: { createdAt: 'asc' } },
         },
       },
       messages: { include: { sender: true }, orderBy: { createdAt: 'asc' } },
@@ -218,6 +223,59 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 )}
               </div>
             )}
+
+            {(() => {
+              // A fee owed and unpaid holds a change order back from the
+              // customer, exactly like an unpaid quote — the booked pro
+              // still sees it (with a pay-retry button) so they're not left
+              // guessing where it went.
+              const visibleChangeOrders = request.booking.changeOrders.filter(
+                (co) => isBookedPro || !co.feeRequiredCents || co.feePaidAt,
+              );
+              const canProposeMore = isBookedPro && (request.booking!.status === 'SCHEDULED' || request.booking!.status === 'IN_PROGRESS');
+              if (visibleChangeOrders.length === 0 && !canProposeMore) return null;
+
+              return (
+                <div className="mt-2 border-t border-gray-100 pt-3">
+                  <h3 className="mb-2 text-sm font-semibold text-gray-900">Change orders</h3>
+                  {visibleChangeOrders.length === 0 ? (
+                    <p className="mb-3 text-sm text-gray-500">No change orders yet.</p>
+                  ) : (
+                    <div className="mb-3 flex flex-col gap-3">
+                      {visibleChangeOrders.map((co) => {
+                        const isHidden = !!co.feeRequiredCents && !co.feePaidAt;
+                        return (
+                          <div key={co.id} className="rounded-lg bg-gray-50 p-3">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-xs text-gray-400">{formatDate(co.createdAt)}</span>
+                              <Badge status={isHidden ? 'PENDING' : co.status} />
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm text-gray-700">{co.description}</p>
+                            <p className="mt-1 text-sm font-semibold text-gray-900">
+                              +{formatCents(co.additionalPriceCents)}
+                            </p>
+                            {isHidden && isBookedPro && (
+                              <div className="mt-2">
+                                <p className="mb-1 text-xs text-gray-500">
+                                  Not yet visible to the customer — complete payment to send it.
+                                </p>
+                                <PayChangeOrderFeeButton changeOrderId={co.id} priceDollars={QUOTE_PRICE_CENTS / 100} />
+                              </div>
+                            )}
+                            {!isHidden && isCustomer && co.status === 'PENDING' && (
+                              <div className="mt-2">
+                                <ChangeOrderActions changeOrderId={co.id} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {canProposeMore && <SubmitChangeOrderForm bookingId={request.booking!.id} />}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { NextResponse, after } from 'next/server';
 import type Stripe from 'stripe';
 
+import { notifyChangeOrderLive } from '@/lib/change-order-fee';
 import { sendQuoteSubmittedEmail, sendSubscriptionPastDueEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
@@ -78,6 +79,27 @@ async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) 
   );
 }
 
+// Mirrors handleQuoteFeeCheckout for ChangeOrder instead of Quote — marks
+// the fee paid and, only on the first delivery (Stripe is at-least-once),
+// fires the same live-notification path the free/subscriber path uses.
+async function handleChangeOrderFeeCheckout(checkoutSession: Stripe.Checkout.Session) {
+  const { kind, changeOrderId } = checkoutSession.metadata ?? {};
+  if (kind !== 'change_order_fee' || !changeOrderId) return;
+
+  const existing = await prisma.changeOrder.findUnique({ where: { id: changeOrderId } });
+  if (!existing) return;
+  const alreadyPaid = !!existing.feePaidAt;
+
+  await prisma.changeOrder.update({
+    where: { id: changeOrderId },
+    data: { feePaidAt: new Date(), stripeSessionId: checkoutSession.id },
+  });
+
+  if (alreadyPaid) return;
+
+  await notifyChangeOrderLive(changeOrderId);
+}
+
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const proProfile = await prisma.proProfile.findFirst({
     where: { stripeSubscriptionId: subscription.id },
@@ -142,7 +164,11 @@ export async function POST(req: Request) {
     case 'checkout.session.completed': {
       const checkoutSession = event.data.object as Stripe.Checkout.Session;
       if (checkoutSession.mode === 'payment') {
-        await handleQuoteFeeCheckout(checkoutSession);
+        if (checkoutSession.metadata?.kind === 'change_order_fee') {
+          await handleChangeOrderFeeCheckout(checkoutSession);
+        } else {
+          await handleQuoteFeeCheckout(checkoutSession);
+        }
       } else {
         await handleSubscriptionCheckout(checkoutSession);
       }
