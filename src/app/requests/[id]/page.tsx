@@ -213,6 +213,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 <ReviewForm bookingId={request.booking.id} />
               </div>
             )}
+            {isCustomer && request.booking.status !== 'CANCELLED' && (
+              <div className="mt-1">
+                <ReportButton targetRequestId={request.id} label="Report a problem with this job" />
+              </div>
+            )}
 
             {(request.booking.updates.length > 0 || isBookedPro) && (
               <div className="mt-2 border-t border-gray-100 pt-3">

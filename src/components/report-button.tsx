@@ -9,6 +9,7 @@ const REASONS = [
   { value: 'SPAM', label: 'Spam' },
   { value: 'INAPPROPRIATE', label: 'Inappropriate content' },
   { value: 'FRAUD', label: 'Fraud or scam' },
+  { value: 'INCOMPLETE_WORK', label: 'Incomplete or unsatisfactory work' },
   { value: 'OTHER', label: 'Other' },
 ] as const;
 

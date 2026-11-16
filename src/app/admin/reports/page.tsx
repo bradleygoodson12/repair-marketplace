@@ -10,6 +10,7 @@ const REASON_LABELS: Record<string, string> = {
   SPAM: 'Spam',
   INAPPROPRIATE: 'Inappropriate content',
   FRAUD: 'Fraud or scam',
+  INCOMPLETE_WORK: 'Incomplete or unsatisfactory work',
   OTHER: 'Other',
 };
 

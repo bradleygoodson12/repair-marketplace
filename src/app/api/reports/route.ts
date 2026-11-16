@@ -10,7 +10,7 @@ const schema = z
   .object({
     targetUserId: z.string().optional(),
     targetRequestId: z.string().optional(),
-    reason: z.enum(['SPAM', 'INAPPROPRIATE', 'FRAUD', 'OTHER']),
+    reason: z.enum(['SPAM', 'INAPPROPRIATE', 'FRAUD', 'INCOMPLETE_WORK', 'OTHER']),
     details: z.string().trim().max(2000).optional(),
   })
   .refine((data) => data.targetUserId || data.targetRequestId, {

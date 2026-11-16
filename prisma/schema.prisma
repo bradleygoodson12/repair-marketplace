@@ -570,6 +570,7 @@ enum ReportReason {
   SPAM
   INAPPROPRIATE
   FRAUD
+  INCOMPLETE_WORK
   OTHER
 }
 
