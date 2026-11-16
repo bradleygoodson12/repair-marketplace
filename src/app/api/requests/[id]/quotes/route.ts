@@ -3,7 +3,7 @@ import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import { sendQuoteSubmittedEmail } from '@/lib/email';
+import { sendQuoteRevisedEmail, sendQuoteSubmittedEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
@@ -101,6 +101,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   await prisma.serviceRequest.update({ where: { id: request.id }, data: { status: 'QUOTED' } });
 
+  // First time this quote becomes visible to the customer → "submitted".
+  // Already visible, now edited → "revised". A quote still held back behind
+  // an unpaid fee isn't live yet, so an edit to it stays silent either way —
+  // nothing to reveal to the customer until it's actually visible.
   if (!wasLive) {
     after(() =>
       sendQuoteSubmittedEmail({
@@ -117,6 +121,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         userId: request.customerId,
         type: 'QUOTE_SUBMITTED',
         title: `New quote submitted: ${request.title}`,
+        url: `/requests/${request.id}`,
+      }),
+    );
+  } else {
+    after(() =>
+      sendQuoteRevisedEmail({
+        to: request.customer.email,
+        requestTitle: request.title,
+        businessName: proProfile.businessName,
+        priceCents: quote.priceCents,
+        isEstimate: quote.isEstimate,
+        requestId: request.id,
+      }),
+    );
+    after(() =>
+      notify({
+        userId: request.customerId,
+        type: 'QUOTE_REVISED',
+        title: `Quote revised: ${request.title}`,
         url: `/requests/${request.id}`,
       }),
     );

@@ -4,8 +4,10 @@ import { z } from 'zod';
 
 import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
+import { sendRequestSubmittedEmail } from '@/lib/email';
 import { isInLaunchArea, OUT_OF_LAUNCH_AREA_MESSAGE } from '@/lib/launch-area';
 import { notifyMatchingPros } from '@/lib/notifications';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -98,6 +100,17 @@ export async function POST(req: Request) {
   });
 
   after(() => notifyMatchingPros(request.id));
+  if (session.user.email) {
+    after(() => sendRequestSubmittedEmail({ to: session.user.email!, requestTitle: title, requestId: request.id }));
+  }
+  after(() =>
+    notify({
+      userId: session.user.id,
+      type: 'REQUEST_SUBMITTED',
+      title: `Request submitted: ${title}`,
+      url: `/requests/${request.id}`,
+    }),
+  );
 
   return NextResponse.json({ id: request.id });
 }

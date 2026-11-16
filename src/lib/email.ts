@@ -137,6 +137,57 @@ export async function sendQuoteSubmittedEmail(params: {
   );
 }
 
+export async function sendRequestSubmittedEmail(params: { to: string; requestTitle: string; requestId: string }) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Request submitted — "${params.requestTitle}"`,
+    layout(
+      'Your request is live',
+      `<p style="margin:0;">We've posted <strong>${params.requestTitle}</strong> to matching pros in your area. You'll get an email as soon as quotes start coming in.</p>`,
+      url,
+      'View request',
+    ),
+  );
+}
+
+export async function sendQuoteNotSelectedEmail(params: { to: string; requestTitle: string; requestId: string }) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Quote not selected — "${params.requestTitle}"`,
+    layout(
+      'The customer went with another quote',
+      `<p style="margin:0;">The customer chose a different pro for <strong>${params.requestTitle}</strong>. No action needed — keep an eye out for new leads in your area.</p>`,
+      url,
+      'View request',
+    ),
+  );
+}
+
+export async function sendQuoteRevisedEmail(params: {
+  to: string;
+  requestTitle: string;
+  businessName: string;
+  priceCents: number;
+  isEstimate: boolean;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  const amountLabel = params.isEstimate ? `Estimate: ${formatCents(params.priceCents)}` : formatCents(params.priceCents);
+  await sendEmail(
+    params.to,
+    `Quote revised — "${params.requestTitle}"`,
+    layout(
+      'A quote was updated',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> revised their quote for <strong>${params.requestTitle}</strong>.</p>
+       <p style="margin:0;">New amount: ${amountLabel}</p>`,
+      url,
+      'View quote',
+    ),
+  );
+}
+
 export async function sendQuoteAcceptedEmail(params: {
   to: string;
   businessName: string;
