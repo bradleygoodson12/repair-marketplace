@@ -412,6 +412,11 @@ model Booking {
   cancelledAt           DateTime?
   cancelledByRole       Role?
   cancelReason          String?       @db.Text
+  // Pure record-keeping uploads from the pro — Repair Bee never generates,
+  // validates, or processes payment against these; it's the same role the
+  // app already plays for license/portfolio documents elsewhere.
+  invoiceUrls           String[]      @default([])
+  warrantyUrls          String[]      @default([])
 
   request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)

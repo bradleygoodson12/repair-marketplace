@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma';
 
 import { PayChangeOrderFeeButton } from '@/components/pay-change-order-fee-button';
 
+import { BookingDocuments } from './booking-documents';
 import { CancelBookingButton } from './cancel-booking-button';
 import { ChangeOrderActions } from './change-order-actions';
 import { CompleteButton } from './complete-button';
@@ -276,6 +277,45 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 </div>
               );
             })()}
+
+            {(isBookedPro || request.booking.invoiceUrls.length > 0 || request.booking.warrantyUrls.length > 0) && (
+              <div className="mt-2 border-t border-gray-100 pt-3">
+                <h3 className="mb-2 text-sm font-semibold text-gray-900">Invoices &amp; warranties</h3>
+                {isBookedPro ? (
+                  <BookingDocuments
+                    bookingId={request.booking.id}
+                    invoiceUrls={request.booking.invoiceUrls}
+                    warrantyUrls={request.booking.warrantyUrls}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {request.booking.invoiceUrls.length === 0 && request.booking.warrantyUrls.length === 0 && (
+                      <p className="text-sm text-gray-500">Nothing uploaded yet.</p>
+                    )}
+                    {request.booking.invoiceUrls.length > 0 && (
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-gray-500">Invoices</p>
+                        <div className="flex flex-wrap gap-3">
+                          {request.booking.invoiceUrls.map((url) => (
+                            <AttachmentThumb key={url} url={url} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {request.booking.warrantyUrls.length > 0 && (
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-gray-500">Warranties</p>
+                        <div className="flex flex-wrap gap-3">
+                          {request.booking.warrantyUrls.map((url) => (
+                            <AttachmentThumb key={url} url={url} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
