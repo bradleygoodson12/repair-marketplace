@@ -417,6 +417,10 @@ model Booking {
   // app already plays for license/portfolio documents elsewhere.
   invoiceUrls           String[]      @default([])
   warrantyUrls          String[]      @default([])
+  // Set once the reminder cron has notified both sides about this
+  // scheduledDate — cleared whenever scheduledDate changes, so moving the
+  // appointment re-arms the reminder instead of silently staying sent.
+  reminderSentAt        DateTime?
 
   request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   quote   Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)

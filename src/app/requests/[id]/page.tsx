@@ -24,6 +24,7 @@ import { PostUpdateForm } from './post-update-form';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
 import { ReviewForm } from './review-form';
+import { ScheduleAppointmentForm } from './schedule-appointment-form';
 import { SubmitChangeOrderForm } from './submit-change-order-form';
 
 export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -170,6 +171,22 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               Pay {request.booking.quote.proProfile.businessName} directly for this job — Repair Bee doesn't process
               that payment.
             </p>
+
+            {(isCustomer || isBookedPro) && (request.booking.status === 'SCHEDULED' || request.booking.status === 'IN_PROGRESS') && (
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                <span>
+                  Appointment:{' '}
+                  {request.booking.scheduledDate.toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <ScheduleAppointmentForm bookingId={request.booking.id} scheduledDate={request.booking.scheduledDate} />
+              </div>
+            )}
 
             {request.booking.status === 'CANCELLED' && (
               <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">

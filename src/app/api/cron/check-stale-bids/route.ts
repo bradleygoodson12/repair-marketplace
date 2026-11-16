@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { sendAppointmentReminders } from '@/lib/appointment-reminders';
 import { sendProNotBiddingAlertEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
@@ -15,6 +16,10 @@ const LOOKBACK_DAYS = 14;
 // over 48h ago, or whose last 5 matched leads got zero quotes from them.
 // Re-derives "matched" the same way notifyMatchingPros does (category +
 // verified + service radius) rather than keeping a separate log table.
+// Also sends upcoming-appointment reminders (see lib/appointment-reminders)
+// — folded into this same daily run rather than its own Vercel Cron entry,
+// since the Hobby plan caps both cron frequency *and* cron count (already
+// at 2 with this one and check-waitlist-expiry).
 // Vercel Cron invokes scheduled routes via GET.
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -102,5 +107,7 @@ export async function GET(req: Request) {
     flaggedCount += 1;
   }
 
-  return NextResponse.json({ checked: pros.length, flagged: flaggedCount });
+  const remindersSent = await sendAppointmentReminders();
+
+  return NextResponse.json({ checked: pros.length, flagged: flaggedCount, remindersSent });
 }

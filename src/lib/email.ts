@@ -195,6 +195,58 @@ export async function sendProjectUpdateEmail(params: {
   );
 }
 
+export async function sendAppointmentScheduledEmail(params: {
+  to: string;
+  requestTitle: string;
+  scheduledDate: Date;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  const dateLabel = params.scheduledDate.toLocaleString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  await sendEmail(
+    params.to,
+    `Appointment scheduled — "${params.requestTitle}"`,
+    layout(
+      'An appointment date was set',
+      `<p style="margin:0;">The appointment for <strong>${params.requestTitle}</strong> is set for <strong>${dateLabel}</strong>.</p>`,
+      url,
+      'View details',
+    ),
+  );
+}
+
+export async function sendAppointmentReminderEmail(params: {
+  to: string;
+  requestTitle: string;
+  scheduledDate: Date;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  const dateLabel = params.scheduledDate.toLocaleString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  await sendEmail(
+    params.to,
+    `Reminder: upcoming appointment — "${params.requestTitle}"`,
+    layout(
+      'Upcoming appointment reminder',
+      `<p style="margin:0;">Just a reminder — the appointment for <strong>${params.requestTitle}</strong> is coming up on <strong>${dateLabel}</strong>.</p>`,
+      url,
+      'View details',
+    ),
+  );
+}
+
 export async function sendChangeOrderSubmittedEmail(params: { to: string; requestTitle: string; requestId: string }) {
   const url = `${origin()}/requests/${params.requestId}`;
   await sendEmail(
