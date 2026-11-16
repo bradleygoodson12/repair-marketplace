@@ -2,6 +2,9 @@ const { withSentryConfig } = require('@sentry/nextjs/config');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    agentUpgrade: 'security',
+  },
   images: {
     // Nothing currently renders a remote image through next/image (the one
     // user-controlled source, request attachments, goes through a plain
