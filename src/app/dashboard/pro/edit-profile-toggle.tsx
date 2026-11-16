@@ -31,9 +31,13 @@ interface ProfileValues {
 export function EditProfileToggle({
   categories,
   initialValues,
+  fullCategoryIds = [],
+  waitlistedCategoryIds = [],
 }: {
   categories: CategoryOption[];
   initialValues: ProfileValues;
+  fullCategoryIds?: string[];
+  waitlistedCategoryIds?: string[];
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -54,7 +58,13 @@ export function EditProfileToggle({
             Close
           </button>
         </div>
-        <ProProfileForm categories={categories} initialValues={initialValues} onSaved={() => setEditing(false)} />
+        <ProProfileForm
+          categories={categories}
+          initialValues={initialValues}
+          fullCategoryIds={fullCategoryIds}
+          waitlistedCategoryIds={waitlistedCategoryIds}
+          onSaved={() => setEditing(false)}
+        />
       </CardContent>
     </Card>
   );

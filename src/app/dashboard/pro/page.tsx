@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
+import { deriveServiceLocation, getFullCategoryIds } from '@/lib/capacity';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
 import { zipDistanceMiles } from '@/lib/zip';
@@ -16,6 +17,7 @@ import { ProProfileForm } from './profile-form';
 import { QuoteDefaultsForm } from './quote-defaults-form';
 import { QuickQuoteTemplatesCard } from './quick-quote-templates-card';
 import { SubscriptionCard } from './subscription-card';
+import { WaitlistOfferCard } from './waitlist-offer-card';
 
 export default async function ProDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -49,9 +51,28 @@ export default async function ProDashboardPage() {
     );
   }
 
+  // Computed before the verified check — a pro can be offered a waitlist
+  // spot (or be waiting on one) while still pending admin review, and the
+  // claim window doesn't pause for that review, so they need to be able to
+  // see and act on it from this page either way.
+  const myWaitlistEntries = await prisma.categoryWaitlistEntry.findMany({
+    where: { proProfileId: proProfile.id, status: { in: ['WAITING', 'OFFERED'] } },
+    include: { category: true },
+  });
+  const offeredEntries = myWaitlistEntries
+    .filter((e) => e.status === 'OFFERED' && e.offerExpiresAt)
+    .map((e) => ({
+      id: e.id,
+      categoryName: e.category.name,
+      city: e.city,
+      state: e.state,
+      offerExpiresAt: e.offerExpiresAt!.toISOString(),
+    }));
+
   if (!proProfile.verified) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
+        <WaitlistOfferCard offers={offeredEntries} />
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{proProfile.businessName}</h1>
@@ -77,6 +98,20 @@ export default async function ProDashboardPage() {
   const unreadNotifications = await prisma.notification.count({
     where: { userId: session.user.id, read: false },
   });
+
+  // Backfill for any profile saved before serviceCity/serviceState existed.
+  let serviceCity = proProfile.serviceCity;
+  let serviceState = proProfile.serviceState;
+  if (!serviceCity || !serviceState) {
+    const location = deriveServiceLocation(proProfile.serviceZip);
+    if (location) {
+      serviceCity = location.city;
+      serviceState = location.state;
+      await prisma.proProfile.update({ where: { id: proProfile.id }, data: { serviceCity, serviceState } });
+    }
+  }
+
+  const fullCategoryIds = serviceCity && serviceState ? await getFullCategoryIds(serviceCity, serviceState) : new Set<string>();
 
   const categoryIds = proProfile.categories.map((c) => c.categoryId);
   const candidateLeads = await prisma.serviceRequest.findMany({
@@ -104,6 +139,7 @@ export default async function ProDashboardPage() {
       <Suspense fallback={null}>
         <PaymentStatusBanner />
       </Suspense>
+      <WaitlistOfferCard offers={offeredEntries} />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {proProfile.photoUrl ? (
@@ -147,6 +183,8 @@ export default async function ProDashboardPage() {
       <div className="mb-4">
         <EditProfileToggle
           categories={categories}
+          fullCategoryIds={[...fullCategoryIds]}
+          waitlistedCategoryIds={myWaitlistEntries.filter((e) => e.status === 'WAITING').map((e) => e.categoryId)}
           initialValues={{
             businessName: proProfile.businessName,
             bio: proProfile.bio,

@@ -9,7 +9,8 @@ type NotificationType =
   | 'BOOKING_CANCELLED'
   | 'SUBSCRIPTION_PAST_DUE'
   | 'NEW_REVIEW'
-  | 'PRO_NOT_BIDDING';
+  | 'PRO_NOT_BIDDING'
+  | 'WAITLIST_SPOT_OFFERED';
 
 // In-app notifications are best-effort, same spirit as the email sends they
 // usually run alongside — a failure here should never break the request

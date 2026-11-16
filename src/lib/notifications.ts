@@ -22,7 +22,7 @@ export async function notifyMatchingPros(requestId: string) {
   const candidates = await prisma.proProfileCategory.findMany({
     where: {
       categoryId: request.categoryId,
-      proProfile: { verified: true },
+      proProfile: { verified: true, user: { suspended: false } },
     },
     include: { proProfile: { include: { user: true } } },
   });

@@ -171,6 +171,47 @@ export async function sendSubscriptionPastDueEmail(params: { to: string; busines
   );
 }
 
+export async function sendProWelcomeEmail(params: {
+  to: string;
+  businessName: string;
+  quotePriceDollars: number;
+  subscriptionPriceDollars: number;
+}) {
+  const url = `${origin()}/dashboard/pro`;
+  await sendEmail(
+    params.to,
+    'Welcome to Repair Bee — here’s how it works',
+    layout(
+      'Welcome to Repair Bee!',
+      `<p style="margin:0 0 14px;">Thanks for joining, ${params.businessName}. Here's what to expect.</p>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">What happens next</p>
+       <p style="margin:0 0 14px;">Our team reviews every new pro profile before it goes live — this usually takes a day or two. You'll get a separate email the moment you're verified.</p>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">How leads work</p>
+       <p style="margin:0 0 14px;">Once verified, you'll see every job that matches your service categories and area — free to view, no obligation. Leads aren't assigned to one pro; everyone who matches gets to look and decide whether to send a quote.</p>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">Be quick to quote</p>
+       <p style="margin:0 0 14px;">Speed matters. Customers often go with whoever responds first and quotes clearly — the faster you review a lead and send a quote, the better your odds of winning the job.</p>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">Pay-per-quote vs. subscription</p>
+       <p style="margin:0 0 6px;">You choose how you pay for sending quotes, and can switch anytime from your dashboard:</p>
+       <ul style="margin:0 0 14px; padding-left:18px;">
+         <li style="margin:0 0 4px;"><strong>Pay-per-quote ($${params.quotePriceDollars}/quote)</strong> — the default. No monthly cost, you only pay when you actually send a quote. Good for testing the waters.</li>
+         <li><strong>Subscription ($${params.subscriptionPriceDollars}/month)</strong> — unlimited quotes, no per-quote fee. Pays for itself once you're quoting regularly.</li>
+       </ul>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">Get the most out of your profile</p>
+       <p style="margin:0 0 14px;">Select every category you're legally qualified to perform, not just your main trade — more categories means more matching leads. Adding your license/insurance info and portfolio photos helps too; fuller profiles stand out to customers.</p>
+
+       <p style="margin:0 0 2px; font-weight:600; color:#18181b;">Stay active</p>
+       <p style="margin:0;">Account and quoting activity is monitored — if engagement stays low for a prolonged period, it could lead to account suspension or removal, to help keep Repair Bee a high-quality platform for everyone.</p>`,
+      url,
+      'Go to your dashboard',
+    ),
+  );
+}
+
 export async function sendProVerifiedEmail(params: { to: string; businessName: string }) {
   const url = `${origin()}/dashboard/pro`;
   await sendEmail(
@@ -181,6 +222,42 @@ export async function sendProVerifiedEmail(params: { to: string; businessName: s
       `<p style="margin:0;">Your pro profile has been reviewed and verified. You can now subscribe to start seeing and quoting job leads in your area.</p>`,
       url,
       'Go to your dashboard',
+    ),
+  );
+}
+
+export async function sendWaitlistJoinedEmail(params: { to: string; categoryName: string; city: string; state: string }) {
+  const url = `${origin()}/dashboard/pro`;
+  await sendEmail(
+    params.to,
+    `You're on the waitlist for ${params.categoryName} in ${params.city}`,
+    layout(
+      "You're on the waitlist",
+      `<p style="margin:0;">${params.categoryName} in ${params.city}, ${params.state} is at capacity right now. We'll email you the moment a spot opens up — no action needed until then.</p>`,
+      url,
+      'View your dashboard',
+    ),
+  );
+}
+
+export async function sendWaitlistSpotOfferedEmail(params: {
+  to: string;
+  businessName: string;
+  categoryName: string;
+  city: string;
+  state: string;
+  expiresAt: Date;
+}) {
+  const url = `${origin()}/dashboard/pro`;
+  await sendEmail(
+    params.to,
+    `A ${params.categoryName} spot opened up in ${params.city} — claim it`,
+    layout(
+      'A spot opened up for you',
+      `<p style="margin:0 0 8px;">Good news, ${params.businessName} — a ${params.categoryName} spot in ${params.city}, ${params.state} is open, and you're next on the waitlist.</p>
+       <p style="margin:0 0 8px; padding:12px; background:#fafafa; border-radius:8px;">Claim it by <strong>${params.expiresAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</strong> or it goes to the next pro in line.</p>`,
+      url,
+      'Claim your spot',
     ),
   );
 }

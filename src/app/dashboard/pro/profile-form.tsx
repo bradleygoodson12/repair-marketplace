@@ -32,10 +32,14 @@ interface ProfileValues {
 export function ProProfileForm({
   categories,
   initialValues,
+  fullCategoryIds = [],
+  waitlistedCategoryIds = [],
   onSaved,
 }: {
   categories: CategoryOption[];
   initialValues?: ProfileValues;
+  fullCategoryIds?: string[];
+  waitlistedCategoryIds?: string[];
   onSaved?: () => void;
 }) {
   const router = useRouter();
@@ -55,21 +59,37 @@ export function ProProfileForm({
   const [licenseDocumentUrls, setLicenseDocumentUrls] = useState<string[]>(initialValues?.licenseDocumentUrls ?? []);
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>(initialValues?.portfolioUrls ?? []);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [joinedWaitlistIds, setJoinedWaitlistIds] = useState<string[]>(waitlistedCategoryIds);
+  const [joiningWaitlistId, setJoiningWaitlistId] = useState<string | null>(null);
 
   function toggleCategory(id: string) {
+    if (fullCategoryIds.includes(id) && !categoryIds.includes(id)) return;
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  }
+
+  async function handleJoinWaitlist(categoryId: string) {
+    setJoiningWaitlistId(categoryId);
+    setError(null);
+    const res = await fetch('/api/pro-profile/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId }),
+    });
+    setJoiningWaitlistId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === 'string' ? data.error : 'Could not join waitlist.');
+      return;
+    }
+    setJoinedWaitlistIds((prev) => [...prev, categoryId]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (categoryIds.length === 0) {
-      setError('Select at least one service category — pick every category you can legally and safely perform.');
-      return;
-    }
-
+    setNotice(null);
     setLoading(true);
 
     const res = await fetch('/api/pro-profile', {
@@ -94,13 +114,20 @@ export function ProProfileForm({
 
     setLoading(false);
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setError(typeof data.error === 'string' ? data.error : 'Could not save profile.');
       return;
     }
 
     router.refresh();
+    if (data.waitlistedCategoryNames?.length > 0) {
+      setNotice(
+        `${data.waitlistedCategoryNames.join(', ')} ${data.waitlistedCategoryNames.length === 1 ? 'was' : 'were'} full, so you've been added to the waitlist instead — we'll email you when a spot opens up.`,
+      );
+      return;
+    }
     onSaved?.();
   }
 
@@ -162,20 +189,47 @@ export function ProProfileForm({
           your own state's rules).
         </p>
         <div className="flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <button
-              type="button"
-              key={c.id}
-              onClick={() => toggleCategory(c.id)}
-              className={`rounded-full border px-3 py-1 text-sm ${
-                categoryIds.includes(c.id)
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-300 text-gray-600'
-              }`}
-            >
-              {c.name}
-            </button>
-          ))}
+          {categories.map((c) => {
+            const selected = categoryIds.includes(c.id);
+            const isFull = fullCategoryIds.includes(c.id) && !selected;
+            const isWaitlisted = joinedWaitlistIds.includes(c.id);
+
+            if (isFull) {
+              return (
+                <span
+                  key={c.id}
+                  className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-400"
+                >
+                  {c.name} · Full
+                  {isWaitlisted ? (
+                    <span className="font-medium text-gray-500">On waitlist</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleJoinWaitlist(c.id)}
+                      disabled={joiningWaitlistId === c.id}
+                      className="font-medium text-brand-600 hover:underline disabled:opacity-50"
+                    >
+                      {joiningWaitlistId === c.id ? 'Joining…' : 'Join waitlist'}
+                    </button>
+                  )}
+                </span>
+              );
+            }
+
+            return (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => toggleCategory(c.id)}
+                className={`rounded-full border px-3 py-1 text-sm ${
+                  selected ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600'
+                }`}
+              >
+                {c.name}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="rounded-lg border border-gray-200 p-4">
@@ -226,6 +280,7 @@ export function ProProfileForm({
         <p className="mb-2 text-xs text-gray-500">Show customers examples of your past work.</p>
         <PhotoUploader value={portfolioUrls} onChange={setPortfolioUrls} max={12} />
       </div>
+      {notice && <p className="text-sm text-amber-700">{notice}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? 'Saving…' : initialValues ? 'Save changes' : 'Save profile'}

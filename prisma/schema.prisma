@@ -148,6 +148,12 @@ model ProProfile {
   hourlyRateCents   Int?
   serviceRadiusMiles Int     @default(15)
   serviceZip        String
+  // Derived from serviceZip on every save (see lib/capacity.ts) — the unit
+  // the per-category capacity cap is scoped to. Nullable only because it's
+  // backfilled lazily; every profile created or edited going forward gets
+  // one set.
+  serviceCity       String?
+  serviceState      String?
   verified          Boolean  @default(false)
   avgRating         Float    @default(0)
   reviewCount       Int      @default(0)
@@ -200,8 +206,43 @@ model ProProfile {
   quotes     Quote[]
   reviews    Review[]            @relation("ReviewsReceived")
   quickQuoteTemplates QuickQuoteTemplate[]
+  waitlistEntries     CategoryWaitlistEntry[]
 
   @@index([serviceZip])
+  @@index([serviceCity, serviceState])
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  EXPIRED
+  CLAIMED
+  DECLINED
+}
+
+// Each category is capped at CATEGORY_CAPACITY_PER_CITY active (verified,
+// non-suspended) pros per city — see lib/capacity.ts. A pro who tries to
+// add a full category joins this waitlist instead; when a slot frees up
+// (a pro drops the category, gets suspended, or loses verification), the
+// oldest WAITING entry for that category+city is offered the spot with a
+// time-limited claim window (see api/cron/check-waitlist-expiry).
+model CategoryWaitlistEntry {
+  id             String         @id @default(cuid())
+  proProfileId   String
+  categoryId     String
+  city           String
+  state          String
+  status         WaitlistStatus @default(WAITING)
+  offeredAt      DateTime?
+  offerExpiresAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  proProfile ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([proProfileId, categoryId, city, state])
+  @@index([categoryId, city, state, status, createdAt])
 }
 
 // A pro's saved presets for commonly-requested jobs (e.g. "Faucet
@@ -234,6 +275,7 @@ model Category {
   requests    ServiceRequest[]
   suggestedForLineItems RepairLineItem[] @relation("SuggestedFor")
   chosenForLineItems    RepairLineItem[] @relation("ChosenFor")
+  waitlistEntries       CategoryWaitlistEntry[]
 }
 
 model ProProfileCategory {
