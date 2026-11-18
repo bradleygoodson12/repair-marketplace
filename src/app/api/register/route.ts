@@ -6,6 +6,7 @@ import { createAuthToken } from '@/lib/auth-tokens';
 import { sendVerificationEmail } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { sanitizeRedirectPath } from '@/lib/utils';
 
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -14,6 +15,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   role: z.enum(['CUSTOMER', 'PRO']),
+  redirect: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -28,8 +30,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { name, email, password, role } = parsed.data;
+  const { name, email, password, role, redirect } = parsed.data;
   const normalizedEmail = email.toLowerCase();
+  const redirectTo = sanitizeRedirectPath(redirect);
 
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing) {
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
 
   after(async () => {
     const token = await createAuthToken(user.id, 'EMAIL_VERIFY', EMAIL_VERIFY_TTL_MS);
-    await sendVerificationEmail({ to: user.email, token });
+    await sendVerificationEmail({ to: user.email, token, redirect: redirectTo ?? undefined });
   });
 
   return NextResponse.json({ id: user.id, email: user.email });

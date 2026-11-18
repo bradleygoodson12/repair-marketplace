@@ -41,8 +41,10 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-export async function sendVerificationEmail(params: { to: string; token: string }) {
-  const url = `${origin()}/verify-email?token=${params.token}`;
+export async function sendVerificationEmail(params: { to: string; token: string; redirect?: string }) {
+  const url = `${origin()}/verify-email?token=${params.token}${
+    params.redirect ? `&redirect=${encodeURIComponent(params.redirect)}` : ''
+  }`;
   await sendEmail(
     params.to,
     'Verify your email for Repair Bee',

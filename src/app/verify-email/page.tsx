@@ -8,9 +8,13 @@ import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { sanitizeRedirectPath } from '@/lib/utils';
 
 function VerifyEmailBody() {
-  const token = useSearchParams().get('token');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+  const redirectTo = sanitizeRedirectPath(searchParams.get('redirect'));
+  const loginHref = redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login';
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>(token ? 'pending' : 'error');
   const [resendEmail, setResendEmail] = useState('');
   const [resendSent, setResendSent] = useState(false);
@@ -45,7 +49,7 @@ function VerifyEmailBody() {
       <>
         <h1 className="mb-3 text-2xl font-bold text-gray-900">Email verified</h1>
         <p className="text-sm text-gray-600">Your account is now active. You can log in.</p>
-        <Link href="/login">
+        <Link href={loginHref}>
           <Button className="mt-4">Log in</Button>
         </Link>
       </>

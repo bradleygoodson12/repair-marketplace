@@ -2,21 +2,23 @@
 
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { sanitizeRedirectPath } from '@/lib/utils';
 
 const ERROR_MESSAGES: Record<string, string> = {
   EMAIL_NOT_VERIFIED: 'Please verify your email before logging in — check your inbox for the link.',
   ACCOUNT_SUSPENDED: 'This account has been suspended. Contact support if you think this is a mistake.',
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const redirectTo = sanitizeRedirectPath(useSearchParams().get('redirect')) ?? '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function LoginPage() {
       setError(ERROR_MESSAGES[res.error] ?? 'Invalid email or password.');
       return;
     }
-    router.push('/');
+    router.push(redirectTo);
     router.refresh();
   }
 
@@ -93,7 +95,10 @@ export default function LoginPage() {
           </form>
           <p className="mt-4 text-sm text-gray-600">
             No account?{' '}
-            <Link href="/signup" className="font-medium text-brand-600 hover:underline">
+            <Link
+              href={redirectTo === '/' ? '/signup' : `/signup?redirect=${encodeURIComponent(redirectTo)}`}
+              className="font-medium text-brand-600 hover:underline"
+            >
               Sign up
             </Link>
           </p>
@@ -103,5 +108,13 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

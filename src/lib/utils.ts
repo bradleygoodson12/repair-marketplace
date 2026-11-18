@@ -16,3 +16,14 @@ export function formatDate(date: Date | string): string {
     year: 'numeric',
   });
 }
+
+// Validates a `redirect` query param before using it to navigate — must be
+// an internal, single-leading-slash path. Rejects protocol-relative URLs
+// ("//evil.com"), backslash tricks some browsers treat as protocol-relative
+// ("/\evil.com"), and absolute URLs, so a crafted link can't redirect a
+// login/signup flow off-site.
+export function sanitizeRedirectPath(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (!path.startsWith('/') || path.startsWith('//') || path.startsWith('/\\')) return null;
+  return path;
+}

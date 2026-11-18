@@ -1,14 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Select } from '@/components/ui/input';
+import { sanitizeRedirectPath } from '@/lib/utils';
 
-export default function SignupPage() {
+function SignupForm() {
+  const redirectTo = sanitizeRedirectPath(useSearchParams().get('redirect'));
+  const loginHref = redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +29,7 @@ export default function SignupPage() {
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, email, password, role, redirect: redirectTo }),
     });
     setLoading(false);
 
@@ -49,7 +53,7 @@ export default function SignupPage() {
               in.
             </p>
             <p className="mt-4 text-sm text-gray-600">
-              <Link href="/login" className="font-medium text-brand-600 hover:underline">
+              <Link href={loginHref} className="font-medium text-brand-600 hover:underline">
                 Go to log in
               </Link>
             </p>
@@ -97,7 +101,7 @@ export default function SignupPage() {
           </form>
           <p className="mt-4 text-sm text-gray-600">
             Already have an account?{' '}
-            <Link href="/login" className="font-medium text-brand-600 hover:underline">
+            <Link href={loginHref} className="font-medium text-brand-600 hover:underline">
               Log in
             </Link>
           </p>
@@ -115,5 +119,13 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </AuthShell>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

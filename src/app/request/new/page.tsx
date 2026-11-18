@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,16 +10,16 @@ import { RequestForm } from './request-form';
 
 export default async function NewRequestPage() {
   const session = await getServerSession(authOptions);
+  if (!session?.user) redirect('/login?redirect=/request/new');
+
   const [categories, savedProperties] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
-    session?.user
-      ? prisma.property.findMany({
-          where: { ownerId: session.user.id },
-          orderBy: { createdAt: 'desc' },
-          distinct: ['addressLine1', 'city', 'state', 'zip'],
-          take: 5,
-        })
-      : [],
+    prisma.property.findMany({
+      where: { ownerId: session.user.id },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['addressLine1', 'city', 'state', 'zip'],
+      take: 5,
+    }),
   ]);
 
   return (
