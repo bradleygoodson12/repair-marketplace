@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { CategoryGrid } from '@/components/category-grid';
 import { ZipSearchForm } from '@/components/zip-search-form';
 import { prisma } from '@/lib/prisma';
@@ -61,6 +63,21 @@ export default async function HomePage() {
             Get fast quotes from top-rated, verified pros near your property, then book with confidence—all in one
             simple platform.
           </p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <Link
+              href="/request/new"
+              className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-6 py-3 text-base font-semibold text-gray-950 shadow-sm shadow-brand-500/20 transition-colors hover:bg-brand-400"
+            >
+              Post a job
+            </Link>
+            <Link
+              href="/request/upload"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-600 bg-transparent px-6 py-3 text-base font-semibold text-white transition-colors hover:border-gray-300"
+            >
+              Upload a repair list
+            </Link>
+          </div>
+          <p className="text-sm text-gray-500">or browse pros by zip code first</p>
           <ZipSearchForm />
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
             {trustPoints.map((point) => (
