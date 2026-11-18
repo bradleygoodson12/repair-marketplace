@@ -92,6 +92,57 @@ export async function sendNewLeadEmail(params: {
   );
 }
 
+// One email per matching pro for a whole batch of line items created from a
+// single repair-document upload (one property, several requests at once) —
+// rather than sendNewLeadEmail firing separately per line item that pro
+// happens to match.
+export async function sendNewLeadsBatchEmail(params: {
+  to: string;
+  businessName: string;
+  items: { title: string; categoryName: string }[];
+  city: string;
+  state: string;
+}) {
+  const url = `${origin()}/dashboard/pro`;
+  const itemsHtml = params.items
+    .map((item) => `<li style="margin:0 0 4px;"><strong>${item.title}</strong> &middot; ${item.categoryName}</li>`)
+    .join('');
+  const count = params.items.length;
+  await sendEmail(
+    params.to,
+    `${count} new lead${count === 1 ? '' : 's'} in ${params.city}, ${params.state}`,
+    layout(
+      `${count} new job${count === 1 ? ' matches' : 's match'} your service area`,
+      `<p style="margin:0 0 8px;">From one property in ${params.city}, ${params.state}:</p>
+       <ul style="margin:0; padding-left:20px;">${itemsHtml}</ul>`,
+      url,
+      'View & send quotes',
+    ),
+  );
+}
+
+export async function sendRequestsBatchSubmittedEmail(params: {
+  to: string;
+  items: { title: string }[];
+  propertyAddress: string;
+}) {
+  const url = `${origin()}/dashboard/customer`;
+  const itemsHtml = params.items.map((item) => `<li style="margin:0 0 4px;">${item.title}</li>`).join('');
+  const count = params.items.length;
+  await sendEmail(
+    params.to,
+    `${count} request${count === 1 ? '' : 's'} submitted — ${params.propertyAddress}`,
+    layout(
+      'Your requests are live',
+      `<p style="margin:0 0 8px;">We've posted the following to matching pros for <strong>${params.propertyAddress}</strong>:</p>
+       <ul style="margin:0; padding-left:20px;">${itemsHtml}</ul>
+       <p style="margin:8px 0 0;">You'll get an email as soon as quotes start coming in.</p>`,
+      url,
+      'View your requests',
+    ),
+  );
+}
+
 export async function sendNewMessageEmail(params: {
   to: string;
   requestTitle: string;

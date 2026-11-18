@@ -4,7 +4,9 @@ import { z } from 'zod';
 
 import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
-import { notifyMatchingPros } from '@/lib/notifications';
+import { sendRequestsBatchSubmittedEmail } from '@/lib/email';
+import { notifyMatchingProsForRequests } from '@/lib/notifications';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 
 const blobUrl = z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.');
@@ -129,7 +131,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
   });
 
-  after(() => Promise.all(created.map((r) => notifyMatchingPros(r.id))));
+  after(() => notifyMatchingProsForRequests(created.map((r) => r.id)));
+
+  if (session.user.email) {
+    const propertyAddress = `${property.addressLine1}, ${property.city}, ${property.state}`;
+    after(() =>
+      sendRequestsBatchSubmittedEmail({
+        to: session.user.email!,
+        items: created.map((r) => ({ title: r.title })),
+        propertyAddress,
+      }),
+    );
+  }
+  after(() =>
+    notify({
+      userId: session.user.id,
+      type: 'REQUEST_SUBMITTED',
+      title: `${created.length} request${created.length === 1 ? '' : 's'} submitted: ${property.addressLine1}`,
+      url: '/dashboard/customer',
+    }),
+  );
 
   return NextResponse.json({ requests: created });
 }
