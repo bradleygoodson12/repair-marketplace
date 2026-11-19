@@ -2,7 +2,7 @@ import { LegalPage } from '@/components/legal-page';
 
 export const metadata = { title: 'Privacy Policy | Repair Bee' };
 
-const LEGAL_ENTITY_NAME = 'Bradley Goodson';
+const LEGAL_ENTITY_NAME = 'Repair Bee LLC';
 const CONTACT_EMAIL = 'privacy@repairbee.io';
 
 export default function PrivacyPage() {
@@ -12,7 +12,8 @@ export default function PrivacyPage() {
       lastUpdated="[DATE — set when this is reviewed and published]"
       intro={
         <p>
-          This Privacy Policy explains what information Repair Bee (operated by {LEGAL_ENTITY_NAME}) collects, how
+          This Privacy Policy explains what information Repair Bee (operated by {LEGAL_ENTITY_NAME}, a South
+          Carolina limited liability company) collects, how
           we use it, and who we share it with. It applies to everyone who uses the site, whether as a customer or a
           pro.
         </p>

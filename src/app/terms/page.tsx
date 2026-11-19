@@ -2,7 +2,7 @@ import { LegalPage } from '@/components/legal-page';
 
 export const metadata = { title: 'Terms of Service | Repair Bee' };
 
-const LEGAL_ENTITY_NAME = 'Bradley Goodson';
+const LEGAL_ENTITY_NAME = 'Repair Bee LLC';
 const GOVERNING_STATE = 'South Carolina';
 const CONTACT_EMAIL = 'legal@repairbee.io';
 const ARBITRATION_OPT_OUT_EMAIL = 'legal@repairbee.io';
@@ -16,8 +16,9 @@ export default function TermsPage() {
         <>
           <p className="mb-3">
             These Terms of Service (&quot;Terms&quot;) govern your access to and use of Repair Bee, operated by{' '}
-            {LEGAL_ENTITY_NAME} (&quot;Repair Bee,&quot; &quot;we,&quot; &quot;us&quot;). By creating an account or
-            using the site, you agree to these Terms. If you don&apos;t agree, don&apos;t use Repair Bee.
+            {LEGAL_ENTITY_NAME}, a South Carolina limited liability company (&quot;Repair Bee,&quot; &quot;we,&quot;
+            &quot;us&quot;). By creating an account or using the site, you agree to these Terms. If you don&apos;t
+            agree, don&apos;t use Repair Bee.
           </p>
           <p className="mb-3">
             Repair Bee is a lead-generation marketplace that connects homeowners (and their agents) with
@@ -292,7 +293,7 @@ export default function TermsPage() {
           heading: 'Limitation of liability',
           body: (
             <p>
-              To the fullest extent permitted by law, Repair Bee and {LEGAL_ENTITY_NAME} are not liable for any
+              To the fullest extent permitted by law, Repair Bee is not liable for any
               indirect, incidental, special, consequential, or punitive damages, or for any damages related to
               repair work performed (or not performed) by a pro, arising from your use of the service. Our total
               liability for any claim relating to Repair Bee is limited to the greater of $100 or the amount you
