@@ -40,10 +40,11 @@ export default function PrivacyPage() {
                 platform, and reviews/ratings left after a completed job.
               </p>
               <p>
-                <strong>Payment information (pros only):</strong> subscription billing is handled entirely by
-                Stripe. We never see or store your card number — Stripe gives us a customer/subscription reference
-                only. We do not process or store any payment information for the repair job itself, since that
-                payment happens directly between customer and pro, outside Repair Bee.
+                <strong>Payment information (pros only):</strong> billing for a pro&apos;s own platform fees — a
+                per-quote fee, a subscription, or a change-order fee — is handled entirely by Stripe. We never see
+                or store your card number — Stripe gives us a customer/subscription/charge reference only. We do
+                not process or store any payment information for the repair job itself, since that payment happens
+                directly between customer and pro, outside Repair Bee.
               </p>
               <p>
                 <strong>Usage information:</strong> standard web request data (IP address, browser, pages visited)

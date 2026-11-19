@@ -12,7 +12,7 @@ export const LAUNCH_AREA_CENTER_ZIP = '29401'; // Charleston, SC (downtown)
 export const LAUNCH_AREA_RADIUS_MILES = 40;
 
 export const OUT_OF_LAUNCH_AREA_MESSAGE =
-  "We're only serving the Charleston, SC area right now, but we'd love to serve your area in the future — email admin@repairbee.com to request it.";
+  "We're only serving the Charleston, SC area right now, but we'd love to serve your area in the future — email admin@repairbee.io to request it.";
 
 /** A zip we don't recognize is treated as out of area, same as one that's genuinely too far. */
 export function isInLaunchArea(zip: string): boolean {
