@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 
 import { AuthShell } from '@/components/auth-shell';
@@ -17,7 +17,6 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 function LoginForm() {
-  const router = useRouter();
   const redirectTo = sanitizeRedirectPath(useSearchParams().get('redirect')) ?? '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,8 +37,12 @@ function LoginForm() {
       setError(ERROR_MESSAGES[res.error] ?? 'Invalid email or password.');
       return;
     }
-    router.push(redirectTo);
-    router.refresh();
+    // A full navigation, not router.push — the homepage now redirects pros
+    // to their dashboard server-side based on session role, and a soft
+    // client-side navigation right after login can serve a stale cached
+    // render of "/" from before the session cookie existed. A hard
+    // navigation always re-evaluates it fresh.
+    window.location.href = redirectTo;
   }
 
   async function handleResend() {

@@ -31,9 +31,7 @@ const schema = z.object({
     .min(1),
   supportingDocumentUrls: z.array(blobUrl).default([]),
   // Applies uniformly to every request created from this batch — asking for
-  // these per item would undo the point of reviewing a long list quickly.
-  budgetMinCents: z.number().int().positive().nullable().optional(),
-  budgetMaxCents: z.number().int().positive().nullable().optional(),
+  // this per item would undo the point of reviewing a long list quickly.
   preferredDate: z.string().nullable().optional(),
 });
 
@@ -55,7 +53,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { property, items, supportingDocumentUrls, budgetMinCents, budgetMaxCents, preferredDate } = parsed.data;
+  const { property, items, supportingDocumentUrls, preferredDate } = parsed.data;
 
   // An id not among this document's AI-extracted line items is one the
   // customer added by hand on the review page — created fresh below instead
@@ -94,8 +92,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           description: item.description,
           photoUrls: requestPhotoUrls,
           sourcePageNumber: pageNumberById.get(item.id) ?? null,
-          budgetMinCents: budgetMinCents ?? null,
-          budgetMaxCents: budgetMaxCents ?? null,
           preferredDate: preferredDate ? new Date(preferredDate) : null,
         },
       });

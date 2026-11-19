@@ -112,12 +112,6 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             </p>
           )}
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-            {(request.budgetMinCents || request.budgetMaxCents) && (
-              <span>
-                Budget: {request.budgetMinCents ? formatCents(request.budgetMinCents) : '—'} to{' '}
-                {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
-              </span>
-            )}
             {request.preferredDate && <span>Preferred date: {formatDate(request.preferredDate)}</span>}
           </div>
           {!isCustomer && myQuoteIsLive && (

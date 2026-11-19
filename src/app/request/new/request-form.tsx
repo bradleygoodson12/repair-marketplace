@@ -37,8 +37,6 @@ export function RequestForm({
   const [categoryId, setCategoryId] = useState(defaultCategoryId);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [budgetMin, setBudgetMin] = useState('');
-  const [budgetMax, setBudgetMax] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [city, setCity] = useState('');
@@ -99,8 +97,6 @@ export function RequestForm({
         categoryId,
         title,
         description,
-        budgetMinCents: budgetMin ? Math.round(parseFloat(budgetMin) * 100) : null,
-        budgetMaxCents: budgetMax ? Math.round(parseFloat(budgetMax) * 100) : null,
         preferredDate: preferredDate || null,
         photoUrls,
         postedAsAgent,
@@ -168,16 +164,6 @@ export function RequestForm({
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Photos (optional)</label>
         <PhotoUploader value={photoUrls} onChange={setPhotoUrls} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Budget min ($)</label>
-          <Input type="number" min="0" value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Budget max ($)</label>
-          <Input type="number" min="0" value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} />
-        </div>
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Preferred date</label>

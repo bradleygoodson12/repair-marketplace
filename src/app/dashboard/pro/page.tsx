@@ -8,8 +8,10 @@ import { authOptions } from '@/lib/auth';
 import { deriveServiceLocation, getFullCategoryIds } from '@/lib/capacity';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
+import { formatCents, formatDate } from '@/lib/utils';
 import { zipDistanceMiles } from '@/lib/zip';
 
+import { AtAGlance } from './at-a-glance';
 import { EditProfileToggle } from './edit-profile-toggle';
 import { LeadCard } from './lead-card';
 import { PaymentStatusBanner } from './payment-status-banner';
@@ -99,6 +101,17 @@ export default async function ProDashboardPage() {
     where: { userId: session.user.id, read: false },
   });
 
+  const [recentMessages, unreadMessageCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: session.user.id, type: 'NEW_MESSAGE' },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+    prisma.notification.count({
+      where: { userId: session.user.id, type: 'NEW_MESSAGE', read: false },
+    }),
+  ]);
+
   // Backfill for any profile saved before serviceCity/serviceState existed.
   let serviceCity = proProfile.serviceCity;
   let serviceState = proProfile.serviceState;
@@ -133,6 +146,18 @@ export default async function ProDashboardPage() {
     .slice(0, 20);
 
   const quoteByRequestId = new Map(proProfile.quotes.map((q) => [q.requestId, q]));
+
+  // "Jobs to bid on" — leads this pro hasn't quoted yet. Already-quoted ones
+  // move to "Your open bids" below instead, so nothing is shown twice.
+  const newLeads = leads.filter(({ request: r }) => !quoteByRequestId.has(r.id));
+
+  // Pulled from proProfile.quotes directly (not the distance/category-
+  // limited `leads` list above) so a bid still awaiting a decision never
+  // drops off this list just because newer, closer leads pushed it out of
+  // the capped leads query.
+  const myOpenQuotes = proProfile.quotes
+    .filter((q) => q.status === 'PENDING' && (!q.quoteFeeRequiredCents || q.quoteFeePaidAt))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -180,6 +205,27 @@ export default async function ProDashboardPage() {
         </div>
       </div>
 
+      <AtAGlance
+        newLeads={newLeads.slice(0, 4).map(({ request: r, distance }) => ({
+          id: r.id,
+          title: r.title,
+          categoryName: r.category.name,
+          distance,
+        }))}
+        newLeadsCount={newLeads.length}
+        openQuotes={myOpenQuotes.slice(0, 4).map((q) => ({
+          id: q.id,
+          requestId: q.requestId,
+          requestTitle: q.request.title,
+          priceCents: q.priceCents,
+          isEstimate: q.isEstimate,
+          createdAt: q.createdAt,
+        }))}
+        openQuotesCount={myOpenQuotes.length}
+        messages={recentMessages.map((n) => ({ id: n.id, title: n.title, url: n.url, read: n.read, createdAt: n.createdAt }))}
+        unreadMessageCount={unreadMessageCount}
+      />
+
       <div className="mb-4">
         <EditProfileToggle
           categories={categories}
@@ -220,7 +266,33 @@ export default async function ProDashboardPage() {
 
       <QuickQuoteTemplatesCard templates={proProfile.quickQuoteTemplates} />
 
-      <h2 className="mb-4 text-lg font-bold text-gray-900">
+      {myOpenQuotes.length > 0 && (
+        <>
+          <h2 id="open-bids" className="mb-4 scroll-mt-20 text-lg font-bold text-gray-900">
+            Your open bids
+          </h2>
+          <div className="mb-8 flex flex-col gap-2">
+            {myOpenQuotes.map((q) => (
+              <Card key={q.id}>
+                <CardContent className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <Link href={`/requests/${q.requestId}`} className="min-w-0 flex-1 hover:underline">
+                    <p className="font-semibold text-gray-900">{q.request.title}</p>
+                    <p className="text-sm text-gray-500">
+                      Submitted {formatDate(q.createdAt)} · Awaiting the customer&apos;s decision
+                    </p>
+                  </Link>
+                  <span className="text-sm font-medium text-gray-700">
+                    {q.isEstimate ? 'Est. ' : ''}
+                    {formatCents(q.priceCents)}
+                  </span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h2 id="job-leads" className="mb-4 scroll-mt-20 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
       {leads.length === 0 ? (

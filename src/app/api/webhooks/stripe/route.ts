@@ -3,7 +3,7 @@ import { NextResponse, after } from 'next/server';
 import type Stripe from 'stripe';
 
 import { notifyChangeOrderLive } from '@/lib/change-order-fee';
-import { sendQuoteSubmittedEmail, sendSubscriptionPastDueEmail } from '@/lib/email';
+import { sendQuoteConfirmationEmail, sendQuoteSubmittedEmail, sendSubscriptionPastDueEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
@@ -52,17 +52,23 @@ async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) 
   const quote = await prisma.quote.update({
     where: { id: quoteId },
     data: { quoteFeePaidAt: new Date(), stripeSessionId: checkoutSession.id },
-    include: { request: { include: { customer: true } }, proProfile: true },
+    include: {
+      request: { include: { customer: true, property: true } },
+      proProfile: { include: { user: true } },
+    },
   });
 
   await prisma.serviceRequest.update({ where: { id: quote.requestId }, data: { status: 'QUOTED' } });
 
   if (alreadyPaid) return;
 
+  const propertyAddress = `${quote.request.property.addressLine1}, ${quote.request.property.city}, ${quote.request.property.state}`;
+
   after(() =>
     sendQuoteSubmittedEmail({
       to: quote.request.customer.email,
       requestTitle: quote.request.title,
+      propertyAddress,
       businessName: quote.proProfile.businessName,
       priceCents: quote.priceCents,
       isEstimate: quote.isEstimate,
@@ -75,6 +81,15 @@ async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) 
       type: 'QUOTE_SUBMITTED',
       title: `New quote submitted: ${quote.request.title}`,
       url: `/requests/${quote.requestId}`,
+    }),
+  );
+  after(() =>
+    sendQuoteConfirmationEmail({
+      to: quote.proProfile.user.email,
+      requestTitle: quote.request.title,
+      propertyAddress,
+      requestId: quote.requestId,
+      feeChargedCents: quote.quoteFeeRequiredCents,
     }),
   );
 }

@@ -3,7 +3,7 @@ import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import { sendQuoteRevisedEmail, sendQuoteSubmittedEmail } from '@/lib/email';
+import { sendQuoteConfirmationEmail, sendQuoteRevisedEmail, sendQuoteSubmittedEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
@@ -32,7 +32,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Your profile must be verified before you can submit quotes.' }, { status: 403 });
   }
 
-  const request = await prisma.serviceRequest.findUnique({ where: { id }, include: { customer: true } });
+  const request = await prisma.serviceRequest.findUnique({
+    where: { id },
+    include: { customer: true, property: true },
+  });
   if (!request) {
     return NextResponse.json({ error: 'Request not found.' }, { status: 404 });
   }
@@ -101,6 +104,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   await prisma.serviceRequest.update({ where: { id: request.id }, data: { status: 'QUOTED' } });
 
+  const propertyAddress = `${request.property.addressLine1}, ${request.property.city}, ${request.property.state}`;
+
   // First time this quote becomes visible to the customer → "submitted".
   // Already visible, now edited → "revised". A quote still held back behind
   // an unpaid fee isn't live yet, so an edit to it stays silent either way —
@@ -110,6 +115,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       sendQuoteSubmittedEmail({
         to: request.customer.email,
         requestTitle: request.title,
+        propertyAddress,
         businessName: proProfile.businessName,
         priceCents: quote.priceCents,
         isEstimate: quote.isEstimate,
@@ -124,6 +130,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         url: `/requests/${request.id}`,
       }),
     );
+    // Reaching here with a non-null quoteFeeRequiredCents means this pro is
+    // a subscriber whose fee was waived (see the check above) — a pro who
+    // actually owes the fee returns earlier via Stripe Checkout, and gets
+    // this same confirmation from the webhook once that payment clears.
+    if (session.user.email) {
+      after(() =>
+        sendQuoteConfirmationEmail({
+          to: session.user.email!,
+          requestTitle: request.title,
+          propertyAddress,
+          requestId: request.id,
+          feeChargedCents: null,
+        }),
+      );
+    }
   } else {
     after(() =>
       sendQuoteRevisedEmail({

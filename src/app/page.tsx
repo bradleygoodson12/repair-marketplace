@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
 
 import { CategoryGrid } from '@/components/category-grid';
 import { ZipSearchForm } from '@/components/zip-search-form';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-export const revalidate = 3600;
 
 const trustPoints = ['Verified pro profiles', 'Free, no-obligation quotes', 'Message pros directly'];
 
@@ -45,6 +46,12 @@ const steps = [
 ];
 
 export default async function HomePage() {
+  // Pros bid on jobs, they don't post them — the generic marketing homepage
+  // (post-a-job CTAs, category browsing) has nothing for a logged-in pro, so
+  // send them straight to their own dashboard instead of showing it.
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role === 'PRO') redirect('/dashboard/pro');
+
   const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
 
   return (

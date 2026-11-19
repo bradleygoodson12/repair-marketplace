@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PayQuoteFeeButton } from '@/components/pay-quote-fee-button';
-import { formatCents } from '@/lib/utils';
 
 interface QuickQuoteTemplate {
   id: string;
@@ -29,8 +28,6 @@ interface LeadCardProps {
     id: string;
     title: string;
     status: string;
-    budgetMinCents: number | null;
-    budgetMaxCents: number | null;
     postedAsAgent: boolean;
     category: { icon: string; name: string };
     property: { city: string; state: string; zip: string };
@@ -87,12 +84,6 @@ export function LeadCard({
             </p>
           </Link>
           <div className="flex flex-shrink-0 items-center gap-3">
-            {(request.budgetMinCents || request.budgetMaxCents) && (
-              <span className="text-sm text-gray-600">
-                {request.budgetMinCents ? formatCents(request.budgetMinCents) : '—'}–
-                {request.budgetMaxCents ? formatCents(request.budgetMaxCents) : '—'}
-              </span>
-            )}
             {!myQuote && (
               <Button type="button" size="sm" variant="outline" onClick={() => setQuoting((q) => !q)}>
                 {quoting ? 'Cancel' : 'Quick quote'}

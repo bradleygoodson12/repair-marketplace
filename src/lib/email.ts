@@ -170,6 +170,7 @@ export async function sendNewMessageEmail(params: {
 export async function sendQuoteSubmittedEmail(params: {
   to: string;
   requestTitle: string;
+  propertyAddress: string;
   businessName: string;
   priceCents: number;
   isEstimate: boolean;
@@ -179,13 +180,42 @@ export async function sendQuoteSubmittedEmail(params: {
   const amountLabel = params.isEstimate ? `Estimate: ${formatCents(params.priceCents)}` : formatCents(params.priceCents);
   await sendEmail(
     params.to,
-    `New quote submitted — "${params.requestTitle}"`,
+    `A pro quoted your job — "${params.requestTitle}"`,
     layout(
-      'A quote has been submitted',
-      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> submitted a quote for <strong>${params.requestTitle}</strong>.</p>
+      'A pro has quoted your job',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> quoted <strong>${params.requestTitle}</strong> at ${params.propertyAddress}.</p>
        <p style="margin:0;">${amountLabel}</p>`,
       url,
-      'View quote',
+      'Click here to view',
+    ),
+  );
+}
+
+// Sent to the PRO right after their own quote goes live — not a Stripe
+// receipt copy, but written to read like one: a pay-per-quote pro was just
+// charged the flat quote fee and this confirms it for their records, while
+// a subscriber (who owes nothing per quote) gets the same thank-you without
+// any charge language.
+export async function sendQuoteConfirmationEmail(params: {
+  to: string;
+  requestTitle: string;
+  propertyAddress: string;
+  requestId: string;
+  feeChargedCents: number | null;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  const feeHtml = params.feeChargedCents
+    ? `<p style="margin:0;">You were charged <strong>${formatCents(params.feeChargedCents)}</strong> for this quote — here's your receipt for your records.</p>`
+    : `<p style="margin:0; color:#71717a;">No quote fee was charged — this one's covered by your subscription.</p>`;
+  await sendEmail(
+    params.to,
+    `Receipt for your quote — "${params.requestTitle}"`,
+    layout(
+      'Thank you for the quote',
+      `<p style="margin:0 0 8px;">Thank you for quoting <strong>${params.requestTitle}</strong> at ${params.propertyAddress}. The customer has been notified.</p>
+       ${feeHtml}`,
+      url,
+      'View request',
     ),
   );
 }
