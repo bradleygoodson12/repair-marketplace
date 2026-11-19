@@ -48,6 +48,13 @@ export default function PrivacyPage() {
                 directly between customer and pro, outside Repair Bee.
               </p>
               <p>
+                <strong>Business verification (pros only, optional):</strong> if you choose to verify your
+                business through Stripe, Stripe collects your business details, EIN, bank account, and identity
+                information directly, as part of its own know-your-customer process. We only receive and store
+                whether that verification was completed — never the underlying business, banking, or identity
+                details themselves.
+              </p>
+              <p>
                 <strong>Usage information:</strong> standard web request data (IP address, browser, pages visited)
                 collected automatically for security and troubleshooting.
               </p>
@@ -91,10 +98,10 @@ export default function PrivacyPage() {
                   sees a pro&apos;s public business profile and reviews.
                 </li>
                 <li>
-                  <strong>Service providers we use to run Repair Bee:</strong> Stripe (subscription billing),
-                  Vercel (hosting and file storage for uploaded photos/documents), Anthropic (AI document analysis),
-                  Resend (transactional email), and our authentication system. Each only receives what it needs to
-                  do its job.
+                  <strong>Service providers we use to run Repair Bee:</strong> Stripe (fee billing, invoices, and —
+                  for pros who opt in — business/identity verification), Vercel (hosting and file storage for
+                  uploaded photos/documents), Anthropic (AI document analysis), Resend (transactional email), and
+                  our authentication system. Each only receives what it needs to do its job.
                 </li>
                 <li>
                   <strong>Legal requirements</strong> — if required to comply with a law, court order, or to protect

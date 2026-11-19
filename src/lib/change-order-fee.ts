@@ -47,6 +47,12 @@ export async function createChangeOrderFeeCheckoutSession(params: {
         quantity: 1,
       },
     ],
+    // Same reasoning as quote-fee.ts: a one-time payment doesn't get an
+    // invoice automatically, so ask Stripe to generate one here too.
+    invoice_creation: {
+      enabled: true,
+      invoice_data: { description: `Repair Bee change order fee — ${params.requestTitle}` },
+    },
     metadata: { kind: 'change_order_fee', changeOrderId: params.changeOrderId },
     success_url: `${origin}/dashboard/pro?changeOrder=paid`,
     cancel_url: `${origin}/requests/${params.requestId}?changeOrder=payment_cancelled`,

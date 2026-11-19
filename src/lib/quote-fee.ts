@@ -48,6 +48,13 @@ export async function createQuoteFeeCheckoutSession(params: {
         quantity: 1,
       },
     ],
+    // A proper Stripe-generated invoice/PDF for the pro's own records, on
+    // top of our own receipt email — this is a one-time payment, so it
+    // isn't invoiced automatically the way a subscription is.
+    invoice_creation: {
+      enabled: true,
+      invoice_data: { description: `Repair Bee quote fee — ${params.requestTitle}` },
+    },
     metadata: { kind: 'quote_fee', quoteId: params.quoteId },
     success_url: `${origin}/dashboard/pro?quote=paid`,
     cancel_url: `${origin}/requests/${params.requestId}?quote=payment_cancelled`,

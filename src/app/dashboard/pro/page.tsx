@@ -12,6 +12,7 @@ import { formatCents, formatDate } from '@/lib/utils';
 import { zipDistanceMiles } from '@/lib/zip';
 
 import { AtAGlance } from './at-a-glance';
+import { ConnectVerificationCard } from './connect-verification-card';
 import { EditProfileToggle } from './edit-profile-toggle';
 import { LeadCard } from './lead-card';
 import { PaymentStatusBanner } from './payment-status-banner';
@@ -257,6 +258,11 @@ export default async function ProDashboardPage() {
         }
         subscriptionPriceDollars={SUBSCRIPTION_PRICE_CENTS / 100}
         quotePriceDollars={QUOTE_PRICE_CENTS / 100}
+      />
+
+      <ConnectVerificationCard
+        detailsSubmitted={proProfile.stripeConnectDetailsSubmitted}
+        hasStartedOnboarding={!!proProfile.stripeConnectAccountId}
       />
 
       <QuoteDefaultsForm

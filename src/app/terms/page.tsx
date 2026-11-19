@@ -127,13 +127,22 @@ export default function TermsPage() {
         {
           heading: '"Verified" profiles',
           body: (
-            <p>
-              A &quot;Verified&quot; badge means a Repair Bee team member reviewed that pro&apos;s profile
-              information. It is <strong>not</strong> a criminal background check, license verification, insurance
-              verification, or any guarantee of a pro&apos;s qualifications or conduct. Customers are responsible
-              for independently confirming a pro&apos;s licensing, insurance, and qualifications before hiring them,
-              as required for the work in their jurisdiction.
-            </p>
+            <>
+              <p className="mb-3">
+                A &quot;Verified&quot; badge means a Repair Bee team member reviewed that pro&apos;s profile
+                information. It is <strong>not</strong> a criminal background check, license verification,
+                insurance verification, or any guarantee of a pro&apos;s qualifications or conduct. Customers are
+                responsible for independently confirming a pro&apos;s licensing, insurance, and qualifications
+                before hiring them, as required for the work in their jurisdiction.
+              </p>
+              <p>
+                A pro may separately complete business verification through Stripe — a real identity check of
+                their business details and bank account, shown as a &quot;Stripe-verified business&quot; badge.
+                That verification is performed entirely by Stripe; Repair Bee only stores whether it was
+                completed. It still is not a license, insurance, or background check, and Repair Bee never gains
+                the ability to move money into or out of that Stripe account through this process.
+              </p>
+            </>
           ),
         },
         {
