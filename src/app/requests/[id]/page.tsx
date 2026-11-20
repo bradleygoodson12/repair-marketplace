@@ -23,6 +23,7 @@ import { MessageThread } from './message-thread';
 import { PostUpdateForm } from './post-update-form';
 import { QuoteForm } from './quote-form';
 import { QuotesList } from './quotes-list';
+import { ResubmitRequestButton } from './resubmit-request-button';
 import { ReviewForm } from './review-form';
 import { ScheduleAppointmentForm } from './schedule-appointment-form';
 import { SubmitChangeOrderForm } from './submit-change-order-form';
@@ -95,6 +96,23 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </div>
         {!isCustomer && <ReportButton targetRequestId={request.id} label="Report this job" />}
       </div>
+
+      {isCustomer && request.status === 'EXPIRED' && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="mb-1 font-bold text-gray-900">This request expired without a hire</h2>
+              <p className="text-sm text-gray-600">
+                It's no longer visible to pros. Still need this done? Re-submit it to post it fresh — everything
+                below carries over, no need to fill out the form again.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <ResubmitRequestButton requestId={request.id} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">
@@ -343,21 +361,35 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      {proProfile && !myQuote && !request.booking && proProfile.verified && (
+      {proProfile &&
+        !myQuote &&
+        !request.booking &&
+        proProfile.verified &&
+        (request.status === 'OPEN' || request.status === 'QUOTED') && (
+          <Card className="mb-6">
+            <CardContent>
+              <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
+              <QuoteForm
+                requestId={request.id}
+                defaultMessage={proProfile.defaultQuoteMessage}
+                defaultDurationDays={proProfile.defaultDurationDays}
+                templates={proProfile.quickQuoteTemplates}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+      {proProfile && !myQuote && !request.booking && request.status === 'EXPIRED' && (
         <Card className="mb-6">
           <CardContent>
-            <h2 className="mb-3 font-bold text-gray-900">Submit a quote</h2>
-            <QuoteForm
-              requestId={request.id}
-              defaultMessage={proProfile.defaultQuoteMessage}
-              defaultDurationDays={proProfile.defaultDurationDays}
-              templates={proProfile.quickQuoteTemplates}
-            />
+            <p className="text-sm text-gray-600">
+              This request expired without a booking and is no longer accepting quotes.
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {proProfile && !myQuote && !request.booking && !proProfile.verified && (
+      {proProfile && !myQuote && !request.booking && !proProfile.verified && request.status !== 'EXPIRED' && (
         <Card className="mb-6">
           <CardContent>
             <p className="text-sm text-gray-600">

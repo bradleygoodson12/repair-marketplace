@@ -26,6 +26,10 @@ enum RequestStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  // Reached 72h after posting with no booking — no longer visible to pros
+  // or quotable, but kept as a record the customer can see and re-submit
+  // from (see lib/request-expiry.ts).
+  EXPIRED
 }
 
 enum QuoteStatus {
@@ -356,6 +360,10 @@ model ServiceRequest {
   // pros have a quick pointer into a long attached report instead of
   // having to search the whole thing.
   sourcePageNumber    Int?
+  // Set once the 48h-unquoted reminder email has gone out to matching pros,
+  // so a daily cron check doesn't resend it every run (see
+  // lib/request-expiry.ts).
+  expiryReminderSentAt DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 

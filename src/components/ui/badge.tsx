@@ -7,6 +7,7 @@ const statusColors: Record<string, string> = {
   IN_PROGRESS: 'bg-indigo-100 text-indigo-700',
   COMPLETED: 'bg-green-100 text-green-700',
   CANCELLED: 'bg-gray-100 text-gray-600',
+  EXPIRED: 'bg-gray-100 text-gray-600',
   PENDING: 'bg-amber-100 text-amber-700',
   ACCEPTED: 'bg-green-100 text-green-700',
   APPROVED: 'bg-green-100 text-green-700',

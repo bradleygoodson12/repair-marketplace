@@ -25,6 +25,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (quote.request.status === 'BOOKED' || quote.request.status === 'IN_PROGRESS' || quote.request.status === 'COMPLETED') {
     return NextResponse.json({ error: 'This request already has a booking.' }, { status: 409 });
   }
+  if (quote.request.status === 'EXPIRED') {
+    return NextResponse.json(
+      { error: 'This request has expired — re-submit it to collect fresh quotes.' },
+      { status: 409 },
+    );
+  }
 
   // Only pending quotes are getting newly declined by this action — a quote
   // already withdrawn/declined shouldn't get a "not selected" notification

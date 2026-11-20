@@ -22,7 +22,9 @@ type NotificationType =
   | 'SUBSCRIPTION_PAST_DUE'
   | 'NEW_REVIEW'
   | 'PRO_NOT_BIDDING'
-  | 'WAITLIST_SPOT_OFFERED';
+  | 'WAITLIST_SPOT_OFFERED'
+  | 'REQUEST_EXPIRING_SOON'
+  | 'REQUEST_EXPIRED';
 
 // In-app notifications are best-effort, same spirit as the email sends they
 // usually run alongside — a failure here should never break the request

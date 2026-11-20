@@ -234,6 +234,40 @@ export async function sendRequestSubmittedEmail(params: { to: string; requestTit
   );
 }
 
+export async function sendQuoteExpiringReminderEmail(params: {
+  to: string;
+  businessName: string;
+  requestTitle: string;
+  requestId: string;
+}) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Expiring soon — "${params.requestTitle}"`,
+    layout(
+      'This lead expires in 24 hours',
+      `<p style="margin:0;">You haven't sent a quote for <strong>${params.requestTitle}</strong> yet — it closes to new quotes in about 24 hours. Send one now if you're interested.</p>`,
+      url,
+      'View & send a quote',
+    ),
+  );
+}
+
+export async function sendRequestExpiredEmail(params: { to: string; requestTitle: string; requestId: string }) {
+  const url = `${origin()}/requests/${params.requestId}`;
+  await sendEmail(
+    params.to,
+    `Request expired — "${params.requestTitle}"`,
+    layout(
+      'Your request closed without a hire',
+      `<p style="margin:0 0 8px;"><strong>${params.requestTitle}</strong> didn't get booked within 72 hours, so it's closed to new quotes.</p>
+       <p style="margin:0;">Still need this done? You can re-submit it in one click — no need to fill out the form again.</p>`,
+      url,
+      'View & re-submit',
+    ),
+  );
+}
+
 export async function sendRevisionRequestedEmail(params: {
   to: string;
   requestTitle: string;

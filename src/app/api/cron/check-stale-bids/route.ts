@@ -4,6 +4,7 @@ import { sendAppointmentReminders } from '@/lib/appointment-reminders';
 import { sendProNotBiddingAlertEmail } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
+import { expireStaleRequests, sendExpiryReminders } from '@/lib/request-expiry';
 import { zipDistanceMiles } from '@/lib/zip';
 
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
@@ -17,9 +18,11 @@ const LOOKBACK_DAYS = 14;
 // Re-derives "matched" the same way notifyMatchingPros does (category +
 // verified + service radius) rather than keeping a separate log table.
 // Also sends upcoming-appointment reminders (see lib/appointment-reminders)
-// — folded into this same daily run rather than its own Vercel Cron entry,
-// since the Hobby plan caps both cron frequency *and* cron count (already
-// at 2 with this one and check-waitlist-expiry).
+// and handles the 48h-unquoted pro reminder / 72h request expiry (see
+// lib/request-expiry) — all folded into this same daily run rather than
+// their own Vercel Cron entries, since the Hobby plan caps both cron
+// frequency *and* cron count (already at 2 with this one and
+// check-waitlist-expiry).
 // Vercel Cron invokes scheduled routes via GET.
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -108,6 +111,14 @@ export async function GET(req: Request) {
   }
 
   const remindersSent = await sendAppointmentReminders();
+  const expiryRemindersSent = await sendExpiryReminders();
+  const expired = await expireStaleRequests();
 
-  return NextResponse.json({ checked: pros.length, flagged: flaggedCount, remindersSent });
+  return NextResponse.json({
+    checked: pros.length,
+    flagged: flaggedCount,
+    remindersSent,
+    expiryRemindersSent,
+    expired,
+  });
 }
