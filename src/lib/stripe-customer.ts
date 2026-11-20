@@ -9,7 +9,16 @@ export async function getOrCreateStripeCustomerId(
   proProfile: { id: string; stripeCustomerId: string | null },
   email: string,
 ): Promise<string> {
-  if (proProfile.stripeCustomerId) return proProfile.stripeCustomerId;
+  if (proProfile.stripeCustomerId) {
+    try {
+      const existing = await stripe.customers.retrieve(proProfile.stripeCustomerId);
+      if (!existing.deleted) return proProfile.stripeCustomerId;
+    } catch {
+      // Saved ID doesn't resolve on Stripe anymore — e.g. it was created
+      // against different API keys before a reset. Fall through and mint
+      // a fresh customer instead of failing checkout forever.
+    }
+  }
 
   const customer = await stripe.customers.create({
     email,
