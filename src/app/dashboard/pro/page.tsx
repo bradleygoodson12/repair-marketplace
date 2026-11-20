@@ -200,6 +200,9 @@ export default async function ProDashboardPage() {
           <Link href="/dashboard/pro/history" className="text-sm font-medium text-brand-600 hover:underline">
             Job history
           </Link>
+          <Link href="/dashboard/pro/receipts" className="text-sm font-medium text-brand-600 hover:underline">
+            Receipts
+          </Link>
           <Link href={`/pros/${proProfile.id}`} className="text-sm font-medium text-brand-600 hover:underline">
             View public profile
           </Link>
