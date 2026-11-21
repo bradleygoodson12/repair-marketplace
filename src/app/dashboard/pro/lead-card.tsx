@@ -38,6 +38,9 @@ interface LeadCardProps {
   defaultMessage: string | null;
   defaultDurationDays: number | null;
   templates?: QuickQuoteTemplate[];
+  // Set when a parent list already shows the property's address as a group
+  // heading, so this card doesn't repeat it for every item at that address.
+  hideLocation?: boolean;
 }
 
 // Quoting used to require leaving the dashboard for each lead's full page.
@@ -53,6 +56,7 @@ export function LeadCard({
   defaultMessage,
   defaultDurationDays,
   templates,
+  hideLocation,
 }: LeadCardProps) {
   const [quoting, setQuoting] = useState(false);
   const paymentPending = !!myQuote?.quoteFeeRequiredCents && !myQuote.quoteFeePaidAt;
@@ -78,10 +82,12 @@ export function LeadCard({
               )}
             </div>
             <p className="font-semibold text-gray-900 hover:underline">{request.title}</p>
-            <p className="text-sm text-gray-500">
-              {request.property.city}, {request.property.state} {request.property.zip}
-              {distance !== null && ` · ${distance.toFixed(1)} mi away`}
-            </p>
+            {!hideLocation && (
+              <p className="text-sm text-gray-500">
+                {request.property.city}, {request.property.state} {request.property.zip}
+                {distance !== null && ` · ${distance.toFixed(1)} mi away`}
+              </p>
+            )}
           </Link>
           <div className="flex flex-shrink-0 items-center gap-3">
             {!myQuote && (

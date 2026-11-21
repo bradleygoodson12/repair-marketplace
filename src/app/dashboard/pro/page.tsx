@@ -139,12 +139,35 @@ export default async function ProDashboardPage() {
   });
 
   // Keep leads within the pro's service radius; if a zip can't be matched
-  // (bad data), don't hide it — just leave distance unknown.
+  // (bad data), don't hide it — just leave distance unknown. Order stays as
+  // the query returned it (newest first) — sorting by distance here used to
+  // let 20+ closer-but-older leads bury a brand-new batch entirely, which is
+  // exactly the bug that prompted this comment.
   const leads = candidateLeads
     .map((r) => ({ request: r, distance: zipDistanceMiles(proProfile.serviceZip, r.property.zip) }))
-    .filter(({ distance }) => distance === null || distance <= proProfile.serviceRadiusMiles)
-    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-    .slice(0, 20);
+    .filter(({ distance }) => distance === null || distance <= proProfile.serviceRadiusMiles);
+
+  // Several leads from the same repair-document upload (or just the same
+  // property) belong together so a pro can size up one job opportunity at
+  // a glance instead of scanning a long flat list. Order follows `leads`
+  // (newest first), so the most recently active property leads.
+  const leadGroups: {
+    propertyId: string;
+    property: { addressLine1: string; city: string; state: string; zip: string };
+    distance: number | null;
+    items: typeof leads;
+  }[] = [];
+  const groupByPropertyId = new Map<string, (typeof leadGroups)[number]>();
+  for (const lead of leads) {
+    const { request: r, distance } = lead;
+    let group = groupByPropertyId.get(r.propertyId);
+    if (!group) {
+      group = { propertyId: r.propertyId, property: r.property, distance, items: [] };
+      groupByPropertyId.set(r.propertyId, group);
+      leadGroups.push(group);
+    }
+    group.items.push(lead);
+  }
 
   const quoteByRequestId = new Map(proProfile.quotes.map((q) => [q.requestId, q]));
 
@@ -304,21 +327,37 @@ export default async function ProDashboardPage() {
       <h2 id="job-leads" className="mb-4 scroll-mt-20 text-lg font-bold text-gray-900">
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
-      {leads.length === 0 ? (
+      {leadGroups.length === 0 ? (
         <p className="mb-8 text-gray-500">No open leads in your service area right now — check back soon.</p>
       ) : (
-        <div className="mb-8 flex flex-col gap-3">
-          {leads.map(({ request: r, distance }) => (
-            <LeadCard
-              key={r.id}
-              request={r}
-              distance={distance}
-              myQuote={quoteByRequestId.get(r.id)}
-              quotePriceDollars={QUOTE_PRICE_CENTS / 100}
-              defaultMessage={proProfile.defaultQuoteMessage}
-              defaultDurationDays={proProfile.defaultDurationDays}
-              templates={proProfile.quickQuoteTemplates}
-            />
+        <div className="mb-8 flex flex-col gap-6">
+          {leadGroups.map((group) => (
+            <div key={group.propertyId}>
+              <div className="mb-2 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+                <h3 className="font-semibold text-gray-900">
+                  {group.property.addressLine1}, {group.property.city}, {group.property.state} {group.property.zip}
+                </h3>
+                <span className="text-sm text-gray-500">
+                  {group.items.length} item{group.items.length === 1 ? '' : 's'}
+                  {group.distance !== null && ` · ${group.distance.toFixed(1)} mi away`}
+                </span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {group.items.map(({ request: r, distance }) => (
+                  <LeadCard
+                    key={r.id}
+                    request={r}
+                    distance={distance}
+                    hideLocation
+                    myQuote={quoteByRequestId.get(r.id)}
+                    quotePriceDollars={QUOTE_PRICE_CENTS / 100}
+                    defaultMessage={proProfile.defaultQuoteMessage}
+                    defaultDurationDays={proProfile.defaultDurationDays}
+                    templates={proProfile.quickQuoteTemplates}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
