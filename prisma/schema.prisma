@@ -225,6 +225,7 @@ model ProProfile {
   reviews    Review[]            @relation("ReviewsReceived")
   quickQuoteTemplates QuickQuoteTemplate[]
   waitlistEntries     CategoryWaitlistEntry[]
+  leadDismissals      ProLeadDismissal[]
 
   @@index([serviceZip])
   @@index([serviceCity, serviceState])
@@ -375,10 +376,29 @@ model ServiceRequest {
   messages Message[]
   repairLineItem RepairLineItem?
   reports  Report[]
+  leadDismissals ProLeadDismissal[]
 
   @@index([customerId])
   @@index([categoryId])
   @@index([status])
+}
+
+// Lets a pro clear a lead off their own dashboard without touching the
+// request itself — it still shows to every other matching pro, and the
+// customer sees no change. A pro who changes their mind can still quote
+// it directly from the request's own page; this only affects their lead
+// list.
+model ProLeadDismissal {
+  id               String   @id @default(cuid())
+  proProfileId     String
+  serviceRequestId String
+  createdAt        DateTime @default(now())
+
+  proProfile     ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([proProfileId, serviceRequestId])
+  @@index([serviceRequestId])
 }
 
 model Quote {

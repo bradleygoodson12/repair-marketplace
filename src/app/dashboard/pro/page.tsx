@@ -128,10 +128,17 @@ export default async function ProDashboardPage() {
   const fullCategoryIds = serviceCity && serviceState ? await getFullCategoryIds(serviceCity, serviceState) : new Set<string>();
 
   const categoryIds = proProfile.categories.map((c) => c.categoryId);
+  const dismissedRequestIds = (
+    await prisma.proLeadDismissal.findMany({
+      where: { proProfileId: proProfile.id },
+      select: { serviceRequestId: true },
+    })
+  ).map((d) => d.serviceRequestId);
   const candidateLeads = await prisma.serviceRequest.findMany({
     where: {
       categoryId: { in: categoryIds },
       status: { in: ['OPEN', 'QUOTED'] },
+      id: { notIn: dismissedRequestIds },
     },
     include: { category: true, property: true },
     orderBy: { createdAt: 'desc' },

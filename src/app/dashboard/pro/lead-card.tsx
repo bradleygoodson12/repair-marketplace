@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { QuoteForm } from '@/app/requests/[id]/quote-form';
@@ -58,8 +59,20 @@ export function LeadCard({
   templates,
   hideLocation,
 }: LeadCardProps) {
+  const router = useRouter();
   const [quoting, setQuoting] = useState(false);
+  const [declining, setDeclining] = useState(false);
   const paymentPending = !!myQuote?.quoteFeeRequiredCents && !myQuote.quoteFeePaidAt;
+
+  async function handleDecline() {
+    setDeclining(true);
+    const res = await fetch(`/api/requests/${request.id}/decline`, { method: 'POST' });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      setDeclining(false);
+    }
+  }
 
   return (
     <Card className="transition-all hover:border-brand-300 hover:shadow-md">
@@ -91,9 +104,19 @@ export function LeadCard({
           </Link>
           <div className="flex flex-shrink-0 items-center gap-3">
             {!myQuote && (
-              <Button type="button" size="sm" variant="outline" onClick={() => setQuoting((q) => !q)}>
-                {quoting ? 'Cancel' : 'Quick quote'}
-              </Button>
+              <>
+                <button
+                  type="button"
+                  disabled={declining}
+                  onClick={handleDecline}
+                  className="text-sm font-medium text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                >
+                  {declining ? 'Declining…' : 'Not interested'}
+                </button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setQuoting((q) => !q)}>
+                  {quoting ? 'Cancel' : 'Quick quote'}
+                </Button>
+              </>
             )}
             {paymentPending && <PayQuoteFeeButton quoteId={myQuote!.id} priceDollars={quotePriceDollars} />}
           </div>
