@@ -132,7 +132,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             {request.preferredDate && <span>Preferred date: {formatDate(request.preferredDate)}</span>}
           </div>
-          {!isCustomer && myQuoteIsLive && (
+          {!isCustomer && isBookedPro && (
             <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
               {request.customer.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -154,7 +154,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
               </div>
             </div>
           )}
-          {!isCustomer && myQuoteIsLive && request.postedAsAgent && (request.clientName || request.clientEmail || request.clientPhone) && (
+          {!isCustomer && isBookedPro && request.postedAsAgent && (request.clientName || request.clientEmail || request.clientPhone) && (
             <div className="rounded-lg bg-amber-50 p-3 text-sm">
               <p className="font-medium text-amber-900">Actual client — coordinate scheduling with them</p>
               <p className="text-amber-800">
@@ -163,6 +163,12 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 {request.clientPhone && <> · {request.clientPhone}</>}
               </p>
             </div>
+          )}
+          {!isCustomer && myQuoteIsLive && !isBookedPro && (
+            <p className="border-t border-gray-100 pt-3 text-sm text-gray-500">
+              Contact info unlocks once you're hired for this job — use the message thread below for questions
+              before then.
+            </p>
           )}
         </CardContent>
       </Card>

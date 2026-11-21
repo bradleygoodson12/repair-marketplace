@@ -64,17 +64,19 @@ async function handleQuoteFeeCheckout(checkoutSession: Stripe.Checkout.Session) 
 
   const propertyAddress = `${quote.request.property.addressLine1}, ${quote.request.property.city}, ${quote.request.property.state}`;
 
-  after(() =>
-    sendQuoteSubmittedEmail({
-      to: quote.request.customer.email,
-      requestTitle: quote.request.title,
-      propertyAddress,
-      businessName: quote.proProfile.businessName,
-      priceCents: quote.priceCents,
-      isEstimate: quote.isEstimate,
-      requestId: quote.requestId,
-    }),
-  );
+  for (const to of [quote.request.customer.email, ...quote.request.ccEmails]) {
+    after(() =>
+      sendQuoteSubmittedEmail({
+        to,
+        requestTitle: quote.request.title,
+        propertyAddress,
+        businessName: quote.proProfile.businessName,
+        priceCents: quote.priceCents,
+        isEstimate: quote.isEstimate,
+        requestId: quote.requestId,
+      }),
+    );
+  }
   after(() =>
     notify({
       userId: quote.request.customerId,

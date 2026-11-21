@@ -25,9 +25,11 @@ interface SavedProperty {
 export function RequestForm({
   categories,
   savedProperties = [],
+  initialPhone,
 }: {
   categories: CategoryOption[];
   savedProperties?: SavedProperty[];
+  initialPhone?: string | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -43,6 +45,8 @@ export function RequestForm({
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [phone, setPhone] = useState(initialPhone ?? '');
+  const [ccEmails, setCcEmails] = useState<string[]>(['']);
   const [postedAsAgent, setPostedAsAgent] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -99,6 +103,8 @@ export function RequestForm({
         description,
         preferredDate: preferredDate || null,
         photoUrls,
+        phone,
+        ccEmails: ccEmails.map((e) => e.trim()).filter(Boolean),
         postedAsAgent,
         clientName,
         clientEmail,
@@ -169,6 +175,60 @@ export function RequestForm({
         <label className="mb-1 block text-sm font-medium text-gray-700">Preferred date</label>
         <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
       </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Your phone number</label>
+        <Input
+          type="tel"
+          required
+          placeholder="For the pro to reach you once they're hired"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Only shared with the pro once you accept their quote — never before.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 p-3">
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Also send quotes to (optional)
+        </label>
+        <p className="mb-2 text-xs text-gray-500">
+          Add your buyer's or seller's email so they get the same quotes you do — no forwarding needed.
+        </p>
+        <div className="flex flex-col gap-2">
+          {ccEmails.map((value, i) => (
+            <div key={i} className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="name@example.com"
+                value={value}
+                onChange={(e) =>
+                  setCcEmails((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                }
+              />
+              {ccEmails.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setCcEmails((prev) => prev.filter((_, idx) => idx !== i))}
+                  className="px-2 text-sm text-gray-400 hover:text-gray-600"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        {ccEmails.length < 5 && (
+          <button
+            type="button"
+            onClick={() => setCcEmails((prev) => [...prev, ''])}
+            className="mt-2 text-sm font-medium text-brand-700 hover:underline"
+          >
+            + Add another email
+          </button>
+        )}
+      </div>
 
       <div className="rounded-lg border border-gray-200 p-3">
         <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -197,7 +257,7 @@ export function RequestForm({
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              Shared with the pro once they quote, so they know who to coordinate access and scheduling with.
+              Shared with the pro once you hire them, so they know who to coordinate access and scheduling with.
             </p>
           </div>
         )}

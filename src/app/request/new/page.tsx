@@ -12,7 +12,7 @@ export default async function NewRequestPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login?redirect=/request/new');
 
-  const [categories, savedProperties] = await Promise.all([
+  const [categories, savedProperties, user] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
     prisma.property.findMany({
       where: { ownerId: session.user.id },
@@ -20,6 +20,7 @@ export default async function NewRequestPage() {
       distinct: ['addressLine1', 'city', 'state', 'zip'],
       take: 5,
     }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { phone: true } }),
   ]);
 
   return (
@@ -33,7 +34,7 @@ export default async function NewRequestPage() {
       <Card>
         <CardContent>
           <Suspense>
-            <RequestForm categories={categories} savedProperties={savedProperties} />
+            <RequestForm categories={categories} savedProperties={savedProperties} initialPhone={user?.phone ?? null} />
           </Suspense>
         </CardContent>
       </Card>

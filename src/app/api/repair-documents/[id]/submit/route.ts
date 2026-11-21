@@ -33,6 +33,10 @@ const schema = z.object({
   // Applies uniformly to every request created from this batch — asking for
   // this per item would undo the point of reviewing a long list quickly.
   preferredDate: z.string().nullable().optional(),
+  phone: z.string().trim().min(7, 'Enter a phone number.').max(30),
+  // Extra people (e.g. the agent's buyer/seller) who get a copy of every
+  // quote notification for every request in this batch.
+  ccEmails: z.array(z.string().trim().email()).max(5).optional().default([]),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { property, items, supportingDocumentUrls, preferredDate } = parsed.data;
+  const { property, items, supportingDocumentUrls, preferredDate, phone, ccEmails } = parsed.data;
 
   // An id not among this document's AI-extracted line items is one the
   // customer added by hand on the review page — created fresh below instead
@@ -79,6 +83,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const created: { id: string; title: string }[] = [];
 
   await prisma.$transaction(async (tx) => {
+    // Kept on the account (not just this batch) so it's already filled in
+    // next time, and so it's there the moment any of these requests gets
+    // accepted — not shared with a pro until then (see requests/[id]).
+    await tx.user.update({ where: { id: session.user.id }, data: { phone } });
+
     for (const item of items) {
       // The item's own photos come first so they're what a pro sees before
       // the shared full-report attachments further down the list.
@@ -93,6 +102,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           photoUrls: requestPhotoUrls,
           sourcePageNumber: pageNumberById.get(item.id) ?? null,
           preferredDate: preferredDate ? new Date(preferredDate) : null,
+          ccEmails,
         },
       });
       if (validLineItemIds.has(item.id)) {

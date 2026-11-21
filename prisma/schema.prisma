@@ -357,6 +357,10 @@ model ServiceRequest {
   clientName          String?
   clientEmail         String?
   clientPhone         String?
+  // Extra recipients (e.g. the agent's buyer/seller) who get a copy of every
+  // quote notification for this request, so everyone sees the same thing
+  // without the agent forwarding emails by hand.
+  ccEmails            String[]      @default([])
   // Set when this request was created from a RepairDocument line item, so
   // pros have a quick pointer into a long attached report instead of
   // having to search the whole thing.

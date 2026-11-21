@@ -70,7 +70,10 @@ export default async function ReviewRepairDocumentPage({ params }: { params: Pro
     );
   }
 
-  const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
+  const [categories, user] = await Promise.all([
+    prisma.category.findMany({ orderBy: { name: 'asc' } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { phone: true } }),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -92,6 +95,7 @@ export default async function ReviewRepairDocumentPage({ params }: { params: Pro
           lineItems: document.lineItems,
         }}
         categories={categories}
+        initialPhone={user?.phone ?? null}
       />
     </div>
   );

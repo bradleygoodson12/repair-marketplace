@@ -37,7 +37,15 @@ interface ItemState {
   photoUrls: string[];
 }
 
-export function ReviewForm({ document, categories }: { document: DocumentProp; categories: CategoryOption[] }) {
+export function ReviewForm({
+  document,
+  categories,
+  initialPhone,
+}: {
+  document: DocumentProp;
+  categories: CategoryOption[];
+  initialPhone?: string | null;
+}) {
   const [addressLine1, setAddressLine1] = useState(document.extractedAddressLine1 ?? '');
   const [city, setCity] = useState(document.extractedCity ?? '');
   const [state, setState] = useState(document.extractedState ?? '');
@@ -54,6 +62,8 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
   );
   const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>(document.supportingDocumentUrls);
   const [preferredDate, setPreferredDate] = useState('');
+  const [phone, setPhone] = useState(initialPhone ?? '');
+  const [ccEmails, setCcEmails] = useState<string[]>(['']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; title: string }[] | null>(null);
@@ -98,6 +108,10 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
       setError('Fill in a title and description for every selected item.');
       return;
     }
+    if (!phone.trim()) {
+      setError('Enter a phone number before sending.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -116,6 +130,8 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
         })),
         supportingDocumentUrls,
         preferredDate: preferredDate || null,
+        phone,
+        ccEmails: ccEmails.map((e) => e.trim()).filter(Boolean),
       }),
     });
 
@@ -259,6 +275,58 @@ export function ReviewForm({ document, categories }: { document: DocumentProp; c
             <label className="mb-1 block text-xs font-medium text-gray-500">Preferred date</label>
             <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <h2 className="mb-1 font-semibold text-gray-900">Your phone number</h2>
+          <p className="mb-3 text-sm text-gray-500">
+            Only shared with a pro once you accept their quote — never before.
+          </p>
+          <div className="max-w-xs">
+            <Input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <h2 className="mb-1 font-semibold text-gray-900">Also send quotes to (optional)</h2>
+          <p className="mb-3 text-sm text-gray-500">
+            Add your buyer's or seller's email so they get the same quotes you do, for every request below — no
+            forwarding needed.
+          </p>
+          <div className="flex flex-col gap-2">
+            {ccEmails.map((value, i) => (
+              <div key={i} className="flex max-w-sm gap-2">
+                <Input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={value}
+                  onChange={(e) => setCcEmails((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))}
+                />
+                {ccEmails.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setCcEmails((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="px-2 text-sm text-gray-400 hover:text-gray-600"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {ccEmails.length < 5 && (
+            <button
+              type="button"
+              onClick={() => setCcEmails((prev) => [...prev, ''])}
+              className="mt-2 text-sm font-medium text-brand-700 hover:underline"
+            >
+              + Add another email
+            </button>
+          )}
         </CardContent>
       </Card>
 

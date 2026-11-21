@@ -17,6 +17,10 @@ const schema = z.object({
   description: z.string().min(1),
   preferredDate: z.string().nullable().optional(),
   photoUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
+  phone: z.string().trim().min(7, 'Enter a phone number.').max(30),
+  // Extra people (e.g. the agent's buyer/seller) who get a copy of every
+  // quote notification for this request.
+  ccEmails: z.array(z.string().trim().email()).max(5).optional().default([]),
   postedAsAgent: z.boolean().optional(),
   clientName: z.string().max(200).optional(),
   clientEmail: z.string().email().max(200).optional().or(z.literal('')),
@@ -55,6 +59,8 @@ export async function POST(req: Request) {
     description,
     preferredDate,
     photoUrls,
+    phone,
+    ccEmails,
     postedAsAgent,
     clientName,
     clientEmail,
@@ -72,6 +78,11 @@ export async function POST(req: Request) {
   }
 
   const request = await prisma.$transaction(async (tx) => {
+    // Kept on the account (not just this request) so it's already filled in
+    // next time, and so it's there the moment any future request of theirs
+    // gets accepted — not shared with a pro until then (see requests/[id]).
+    await tx.user.update({ where: { id: session.user.id }, data: { phone } });
+
     const createdProperty = await tx.property.create({
       data: { ownerId: session.user.id, ...property },
     });
@@ -85,6 +96,7 @@ export async function POST(req: Request) {
         description,
         preferredDate: preferredDate ? new Date(preferredDate) : null,
         photoUrls: photoUrls ?? [],
+        ccEmails,
         postedAsAgent: postedAsAgent ?? false,
         clientName: postedAsAgent ? clientName?.trim() || null : null,
         clientEmail: postedAsAgent ? clientEmail?.trim() || null : null,

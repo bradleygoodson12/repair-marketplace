@@ -111,17 +111,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // an unpaid fee isn't live yet, so an edit to it stays silent either way —
   // nothing to reveal to the customer until it's actually visible.
   if (!wasLive) {
-    after(() =>
-      sendQuoteSubmittedEmail({
-        to: request.customer.email,
-        requestTitle: request.title,
-        propertyAddress,
-        businessName: proProfile.businessName,
-        priceCents: quote.priceCents,
-        isEstimate: quote.isEstimate,
-        requestId: request.id,
-      }),
-    );
+    for (const to of [request.customer.email, ...request.ccEmails]) {
+      after(() =>
+        sendQuoteSubmittedEmail({
+          to,
+          requestTitle: request.title,
+          propertyAddress,
+          businessName: proProfile.businessName,
+          priceCents: quote.priceCents,
+          isEstimate: quote.isEstimate,
+          requestId: request.id,
+        }),
+      );
+    }
     after(() =>
       notify({
         userId: request.customerId,
@@ -146,16 +148,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       );
     }
   } else {
-    after(() =>
-      sendQuoteRevisedEmail({
-        to: request.customer.email,
-        requestTitle: request.title,
-        businessName: proProfile.businessName,
-        priceCents: quote.priceCents,
-        isEstimate: quote.isEstimate,
-        requestId: request.id,
-      }),
-    );
+    for (const to of [request.customer.email, ...request.ccEmails]) {
+      after(() =>
+        sendQuoteRevisedEmail({
+          to,
+          requestTitle: request.title,
+          businessName: proProfile.businessName,
+          priceCents: quote.priceCents,
+          isEstimate: quote.isEstimate,
+          requestId: request.id,
+        }),
+      );
+    }
     after(() =>
       notify({
         userId: request.customerId,
