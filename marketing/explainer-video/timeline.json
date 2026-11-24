@@ -1,0 +1,366 @@
+{
+  "scenes": [
+    {
+      "id": "hook",
+      "title": "The inspection report",
+      "start": 0,
+      "end": 13.1,
+      "cues": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "id": "problem",
+      "title": "The old way",
+      "start": 13.1,
+      "end": 24.1,
+      "cues": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "Meet Repair Bee",
+      "start": 24.1,
+      "end": 34.71,
+      "cues": [
+        5,
+        6
+      ]
+    },
+    {
+      "id": "upload",
+      "title": "Step 1 — Upload",
+      "start": 34.71,
+      "end": 48.18,
+      "cues": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "id": "send",
+      "title": "Step 2 — Send",
+      "start": 48.18,
+      "end": 62.42,
+      "cues": [
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "id": "quotes",
+      "title": "Step 3 — Compare quotes",
+      "start": 62.42,
+      "end": 74.73,
+      "cues": [
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "id": "schedule",
+      "title": "Step 4 — Schedule & finish",
+      "start": 74.73,
+      "end": 88.97,
+      "cues": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "id": "benefits",
+      "title": "Who wins",
+      "start": 88.97,
+      "end": 109.49,
+      "cues": [
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "id": "pros",
+      "title": "For contractors — the Pro List",
+      "start": 109.49,
+      "end": 144.61,
+      "cues": [
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ]
+    },
+    {
+      "id": "cta",
+      "title": "Call to action",
+      "start": 144.61,
+      "end": 155.71,
+      "cues": [
+        29,
+        30
+      ]
+    }
+  ],
+  "cues": [
+    {
+      "id": 0,
+      "scene": "hook",
+      "start": 1,
+      "end": 4.38,
+      "text": "You found the house. You made the offer.",
+      "say": "You found the house. You made the offer."
+    },
+    {
+      "id": 1,
+      "scene": "hook",
+      "start": 4.63,
+      "end": 8.77,
+      "text": "Then the inspection report lands: forty pages, two dozen repairs…",
+      "say": "Then the inspection report lands: forty pages, two dozen repairs…"
+    },
+    {
+      "id": 2,
+      "scene": "hook",
+      "start": 9.02,
+      "end": 12.4,
+      "text": "…and a closing date that isn’t going anywhere.",
+      "say": "And a closing date that isn’t going anywhere."
+    },
+    {
+      "id": 3,
+      "scene": "problem",
+      "start": 13.7,
+      "end": 19.38,
+      "text": "Now someone has to call a plumber, an electrician, a roofer — one by one.",
+      "say": "Now someone has to call a plumber, an electrician, a roofer — one by one."
+    },
+    {
+      "id": 4,
+      "scene": "problem",
+      "start": 19.63,
+      "end": 23.4,
+      "text": "Waiting on callbacks. Chasing estimates. Watching the deal stall.",
+      "say": "Waiting on callbacks. Chasing estimates. Watching the deal stall."
+    },
+    {
+      "id": 5,
+      "scene": "intro",
+      "start": 24.7,
+      "end": 27.69,
+      "text": "There’s a better way. Meet Repair Bee.",
+      "say": "There’s a better way. Meet Repair Bee."
+    },
+    {
+      "id": 6,
+      "scene": "intro",
+      "start": 27.94,
+      "end": 34.01,
+      "text": "The fastest way to turn a repair list into real quotes from verified local pros.",
+      "say": "The fastest way to turn a repair list into real quotes from verified local pros."
+    },
+    {
+      "id": 7,
+      "scene": "upload",
+      "start": 35.31,
+      "end": 39.07,
+      "text": "Step one: upload the inspection report or repair addendum.",
+      "say": "Step one: upload the inspection report or repair addendum."
+    },
+    {
+      "id": 8,
+      "scene": "upload",
+      "start": 39.32,
+      "end": 44.23,
+      "text": "Repair Bee reads it for you and breaks it into individual repairs —",
+      "say": "Repair Bee reads it for you and breaks it into individual repairs —"
+    },
+    {
+      "id": 9,
+      "scene": "upload",
+      "start": 44.48,
+      "end": 47.48,
+      "text": "each one matched to the right trade.",
+      "say": "each one matched to the right trade."
+    },
+    {
+      "id": 10,
+      "scene": "send",
+      "start": 48.78,
+      "end": 53.31,
+      "text": "Step two: review the list, make any tweaks, and hit send.",
+      "say": "Step two: review the list, make any tweaks, and hit send."
+    },
+    {
+      "id": 11,
+      "scene": "send",
+      "start": 53.56,
+      "end": 58.47,
+      "text": "Every request goes out at once to verified pros near the property.",
+      "say": "Every request goes out at once to verified pros near the property."
+    },
+    {
+      "id": 12,
+      "scene": "send",
+      "start": 58.72,
+      "end": 61.72,
+      "text": "No phone tag. No repeat data entry.",
+      "say": "No phone tag. No repeat data entry."
+    },
+    {
+      "id": 13,
+      "scene": "quotes",
+      "start": 63.02,
+      "end": 66.01,
+      "text": "Step three: the quotes come to you.",
+      "say": "Step three: the quotes come to you."
+    },
+    {
+      "id": 14,
+      "scene": "quotes",
+      "start": 66.26,
+      "end": 71.17,
+      "text": "Compare price and timing side by side, and message pros with questions.",
+      "say": "Compare price and timing side by side, and message pros with questions."
+    },
+    {
+      "id": 15,
+      "scene": "quotes",
+      "start": 71.42,
+      "end": 74.03,
+      "text": "Then accept the one you want.",
+      "say": "Then accept the one you want."
+    },
+    {
+      "id": 16,
+      "scene": "schedule",
+      "start": 75.33,
+      "end": 80.25,
+      "text": "Step four: schedule the work and follow progress right from your dashboard.",
+      "say": "Step four: schedule the work and follow progress right from your dashboard."
+    },
+    {
+      "id": 17,
+      "scene": "schedule",
+      "start": 80.5,
+      "end": 85.03,
+      "text": "You pay the pro directly. Repair Bee never touches your money.",
+      "say": "You pay the pro directly. Repair Bee never touches your money."
+    },
+    {
+      "id": 18,
+      "scene": "schedule",
+      "start": 85.28,
+      "end": 88.27,
+      "text": "When the job’s done, leave a review.",
+      "say": "When the job’s done, leave a review."
+    },
+    {
+      "id": 19,
+      "scene": "benefits",
+      "start": 89.57,
+      "end": 91.37,
+      "text": "So who wins?",
+      "say": "So who wins?"
+    },
+    {
+      "id": 20,
+      "scene": "benefits",
+      "start": 91.62,
+      "end": 97.69,
+      "text": "Real estate agents save hours on every transaction and keep deals on track to close.",
+      "say": "Real estate agents save hours on every transaction and keep deals on track to close."
+    },
+    {
+      "id": 21,
+      "scene": "benefits",
+      "start": 97.94,
+      "end": 103.24,
+      "text": "Buyers get real repair numbers before closing, so they can negotiate with confidence.",
+      "say": "Buyers get real repair numbers before closing, so they can negotiate with confidence."
+    },
+    {
+      "id": 22,
+      "scene": "benefits",
+      "start": 103.49,
+      "end": 108.79,
+      "text": "And sellers knock out repairs fast, avoid surprise credits, and close on time.",
+      "say": "And sellers knock out repairs fast, avoid surprise credits, and close on time."
+    },
+    {
+      "id": 23,
+      "scene": "pros",
+      "start": 110.09,
+      "end": 114.23,
+      "text": "And if you’re a contractor? This is your new pipeline.",
+      "say": "And if you’re a contractor? This is your new pipeline."
+    },
+    {
+      "id": 24,
+      "scene": "pros",
+      "start": 114.48,
+      "end": 119.78,
+      "text": "Join the Repair Bee Pro List and see every lead near you — free.",
+      "say": "Join the Repair Bee Pro List and see every lead near you — free."
+    },
+    {
+      "id": 25,
+      "scene": "pros",
+      "start": 120.03,
+      "end": 127.64,
+      "text": "You only pay when you send a quote: $5 a quote, or $20 a month for unlimited.",
+      "say": "You only pay when you send a quote: five dollars a quote, or twenty dollars a month for unlimited."
+    },
+    {
+      "id": 26,
+      "scene": "pros",
+      "start": 127.89,
+      "end": 130.5,
+      "text": "No commissions. Customers pay you directly.",
+      "say": "No commissions. Customers pay you directly."
+    },
+    {
+      "id": 27,
+      "scene": "pros",
+      "start": 130.75,
+      "end": 139.13,
+      "text": "And each trade is capped at 5 pros per city, so you’re not one of 50 fighting for the same job.",
+      "say": "And each trade is capped at five pros per city, so you’re not one of fifty fighting for the same job."
+    },
+    {
+      "id": 28,
+      "scene": "pros",
+      "start": 139.38,
+      "end": 143.91,
+      "text": "Just steady work from agents who close deals every single month.",
+      "say": "Just steady work from agents who close deals every single month."
+    },
+    {
+      "id": 29,
+      "scene": "cta",
+      "start": 145.21,
+      "end": 147.82,
+      "text": "Repair Bee. Your repair list, handled.",
+      "say": "Repair Bee. Your repair list, handled."
+    },
+    {
+      "id": 30,
+      "scene": "cta",
+      "start": 148.07,
+      "end": 152.21,
+      "text": "Upload a repair list, or join the Pro List today.",
+      "say": "Upload a repair list, or join the Pro List today."
+    }
+  ],
+  "duration": 155.71
+}
