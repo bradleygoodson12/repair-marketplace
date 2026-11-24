@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
+import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 
 const steps = [
   { title: 'Get matched', body: 'See job requests that match your service categories and area.' },
@@ -10,6 +10,7 @@ const steps = [
 ];
 
 export default function ProSignupLandingPage() {
+  const quotePriceDollars = QUOTE_PRICE_CENTS / 100;
   const subscriptionPriceDollars = SUBSCRIPTION_PRICE_CENTS / 100;
 
   return (
@@ -48,10 +49,14 @@ export default function ProSignupLandingPage() {
 
         <Card className="mt-6 border-brand-200 bg-brand-50">
           <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
-            <h3 className="font-bold text-gray-900">${subscriptionPriceDollars}/month, unlimited quotes</h3>
+            <h3 className="font-bold text-gray-900">${quotePriceDollars} per quote — pay only when you bid</h3>
             <p className="max-w-md text-sm text-gray-600">
-              One flat subscription gets you every job lead and quote in your service area — no per-lead fees, no
-              surprises.
+              Every job lead in your area is free to browse. You're only charged the ${quotePriceDollars} fee the
+              moment you actually send a quote — nothing up front, no cost for leads you skip.
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Bidding on a lot of jobs? Switch to ${subscriptionPriceDollars}/month for unlimited quotes any time —
+              no per-quote fees.
             </p>
           </CardContent>
         </Card>

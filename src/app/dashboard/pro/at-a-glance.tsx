@@ -57,7 +57,9 @@ export function AtAGlance({
             </span>
           </div>
           {newLeadsCount === 0 ? (
-            <p className="text-sm text-gray-500">No new leads right now — check back soon.</p>
+            <p className="text-sm text-gray-500">
+              You're all set — we'll email you the moment a matching job comes in.
+            </p>
           ) : (
             <ul className="flex flex-col gap-1.5">
               {newLeads.map((lead) => (

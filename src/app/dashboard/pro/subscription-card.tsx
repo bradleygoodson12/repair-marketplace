@@ -75,7 +75,7 @@ export function SubscriptionCard({
   if (billingMode === 'PAY_PER_QUOTE') {
     return (
       <Card className="mb-8">
-        <CardContent className="flex items-center justify-between gap-4">
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-bold text-gray-900">Pay per quote</h2>
             <p className="text-sm text-gray-600">
@@ -84,7 +84,7 @@ export function SubscriptionCard({
             </p>
             {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
           </div>
-          <Button onClick={startCheckout} disabled={loading}>
+          <Button onClick={startCheckout} disabled={loading} className="flex-shrink-0">
             {loading ? 'Redirecting…' : `Switch to subscription — $${subscriptionPriceDollars}/mo`}
           </Button>
         </CardContent>
@@ -94,7 +94,7 @@ export function SubscriptionCard({
 
   return (
     <Card className={cn('mb-8', needsAttention && 'border-brand-200 bg-brand-50')}>
-      <CardContent className="flex items-center justify-between gap-4">
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-bold text-gray-900">{isActive ? 'Subscription active' : 'Subscription required'}</h2>
           <p className="text-sm text-gray-600">
@@ -111,7 +111,7 @@ export function SubscriptionCard({
             </p>
           )}
         </div>
-        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+        <div className="flex flex-shrink-0 flex-col items-start gap-2 sm:items-end">
           {isActive || status === 'PAST_DUE' ? (
             <Button variant="outline" onClick={openPortal} disabled={loading}>
               {loading ? 'Loading…' : 'Manage billing'}

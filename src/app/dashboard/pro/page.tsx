@@ -213,7 +213,9 @@ export default async function ProDashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{proProfile.businessName}</h1>
             <p className="text-sm text-gray-500">
-              {proProfile.avgRating.toFixed(1)} ★ ({proProfile.reviewCount} reviews)
+              {proProfile.reviewCount > 0
+                ? `${proProfile.avgRating.toFixed(1)} ★ (${proProfile.reviewCount} reviews)`
+                : '(0 reviews)'}
               {proProfile.licenseNumber && <> · License #{proProfile.licenseNumber}</>}
             </p>
           </div>
@@ -335,7 +337,10 @@ export default async function ProDashboardPage() {
         Job leads within {proProfile.serviceRadiusMiles} miles of {proProfile.serviceZip}
       </h2>
       {leadGroups.length === 0 ? (
-        <p className="mb-8 text-gray-500">No open leads in your service area right now — check back soon.</p>
+        <p className="mb-8 text-gray-500">
+          You're all set — we'll email you the moment a job matching your categories and area comes in. No need to
+          keep checking back.
+        </p>
       ) : (
         <div className="mb-8 flex flex-col gap-6">
           {leadGroups.map((group) => (

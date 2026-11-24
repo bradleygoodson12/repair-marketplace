@@ -1,6 +1,16 @@
 import { cn } from '@/lib/utils';
 
 export function StarRating({ rating, count }: { rating: number; count?: number }) {
+  // A brand-new pro's real 0.0 reads as broken, not "new" — so until there's
+  // at least one review, show the plain count instead of a dead-looking
+  // star rating.
+  if (count === 0) {
+    return (
+      <div className="flex items-center gap-1 text-sm">
+        <span className="text-gray-500">(0 reviews)</span>
+      </div>
+    );
+  }
   return (
     <div className="flex items-center gap-1 text-sm">
       <span className="text-amber-500">★</span>

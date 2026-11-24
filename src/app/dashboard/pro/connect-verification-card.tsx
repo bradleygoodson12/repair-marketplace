@@ -46,7 +46,7 @@ export function ConnectVerificationCard({ detailsSubmitted, hasStartedOnboarding
 
   return (
     <Card className="mb-8">
-      <CardContent className="flex items-center justify-between gap-4">
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-bold text-gray-900">Verify your business with Stripe</h2>
           <p className="text-sm text-gray-600">
