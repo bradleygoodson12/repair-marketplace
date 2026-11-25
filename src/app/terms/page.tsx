@@ -154,6 +154,10 @@ export default function TermsPage() {
                 descriptions, photos, documents (like inspection reports), messages, invoices, warranty documents,
                 and reviews. Don&apos;t upload anything you don&apos;t have the right to share, or anything
                 containing another person&apos;s sensitive personal information without their consent. If you
+                upload a home inspection report or other third-party document, you represent and warrant that
+                you have the authority and consent of that document&apos;s original owner to share its contents
+                with Repair Bee and with the pros who view your request — Repair Bee relies on that
+                representation and isn&apos;t responsible for a document you upload without that consent. If you
                 upload photos or documents meant to represent actual completed work — for example, before-and-after
                 photos attached to an invoice — they must be authentic and not generated or materially altered by
                 AI.
