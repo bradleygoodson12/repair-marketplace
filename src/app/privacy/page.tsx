@@ -82,7 +82,13 @@ export default function PrivacyPage() {
               sent to Anthropic&apos;s Claude API to extract individual repair items and match them to service
               categories. This is a third-party AI service with its own processing of that content. Don&apos;t
               upload documents containing information you don&apos;t want processed by a third-party AI provider.
-              AI-extracted results may be inaccurate — review them before submitting.
+              AI-extracted results may be inaccurate — review them before submitting. By uploading a home
+              inspection report or other third-party document, you represent that you have the original
+              owner&apos;s consent to share it this way — see our{' '}
+              <a href="/terms" className="text-brand-700 underline">
+                Terms of Service
+              </a>{' '}
+              for more.
             </p>
           ),
         },
