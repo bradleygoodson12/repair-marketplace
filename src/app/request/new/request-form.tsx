@@ -4,9 +4,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { AddressAutocompleteInput } from '@/components/address-autocomplete-input';
+import { ConnectingProsOverlay } from '@/components/connecting-pros-overlay';
 import { Button } from '@/components/ui/button';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { PhotoUploader } from '@/components/photo-uploader';
+
+const MIN_CONNECTING_MS = 1400;
 
 interface CategoryOption {
   id: string;
@@ -93,6 +96,7 @@ export function RequestForm({
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const start = Date.now();
 
     const res = await fetch('/api/requests', {
       method: 'POST',
@@ -112,21 +116,37 @@ export function RequestForm({
         property: { addressLine1, city, state, zip },
       }),
     });
+    const data = res.ok ? await res.json() : await res.json().catch(() => ({}));
 
-    setLoading(false);
+    const elapsed = Date.now() - start;
+    if (elapsed < MIN_CONNECTING_MS) {
+      await new Promise((resolve) => setTimeout(resolve, MIN_CONNECTING_MS - elapsed));
+    }
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      setLoading(false);
       setError(typeof data.error === 'string' ? data.error : 'Could not submit your request.');
       return;
     }
 
-    const data = await res.json();
+    // Leave the overlay up (loading stays true) through the navigation itself,
+    // so there's no flash of the empty form while the destination page loads.
     router.push(`/requests/${data.id}`);
   }
 
+  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name;
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {loading && (
+        <ConnectingProsOverlay
+          subtitle={
+            selectedCategoryName
+              ? `Matching your ${selectedCategoryName.toLowerCase()} request to verified pros near you.`
+              : undefined
+          }
+        />
+      )}
       <div>
         <div className="mb-1 flex items-center justify-between">
           <label className="block text-sm font-medium text-gray-700">Service category</label>

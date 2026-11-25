@@ -6,10 +6,13 @@ import { useState } from 'react';
 
 import { AddressAutocompleteInput } from '@/components/address-autocomplete-input';
 import { AttachmentThumb } from '@/components/attachment-thumb';
+import { ConnectingProsOverlay } from '@/components/connecting-pros-overlay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { MultiFileUploader } from '@/components/multi-file-uploader';
+
+const MIN_CONNECTING_MS = 1400;
 
 interface CategoryOption {
   id: string;
@@ -115,6 +118,7 @@ export function ReviewForm({
 
     setLoading(true);
     setError(null);
+    const start = Date.now();
 
     const res = await fetch(`/api/repair-documents/${document.id}/submit`, {
       method: 'POST',
@@ -134,16 +138,19 @@ export function ReviewForm({
         ccEmails: ccEmails.map((e) => e.trim()).filter(Boolean),
       }),
     });
+    const data = res.ok ? await res.json() : await res.json().catch(() => ({}));
 
+    const elapsed = Date.now() - start;
+    if (elapsed < MIN_CONNECTING_MS) {
+      await new Promise((resolve) => setTimeout(resolve, MIN_CONNECTING_MS - elapsed));
+    }
     setLoading(false);
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setError(typeof data.error === 'string' ? data.error : 'Could not send these requests.');
       return;
     }
 
-    const data = await res.json();
     setCreated(data.requests);
   }
 
@@ -172,6 +179,12 @@ export function ReviewForm({
 
   return (
     <div className="flex flex-col gap-6">
+      {loading && (
+        <ConnectingProsOverlay
+          title="Sending your requests to local pros…"
+          subtitle={`Matching ${selectedCount} item${selectedCount === 1 ? '' : 's'} to verified pros near you.`}
+        />
+      )}
       <Card>
         <CardContent>
           <h2 className="mb-3 font-semibold text-gray-900">Property address</h2>
