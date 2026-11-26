@@ -631,6 +631,48 @@ export async function sendProNotBiddingAlertEmail(params: { to: string; business
   );
 }
 
+export async function sendProLowRatingAlertEmail(params: {
+  to: string;
+  businessName: string;
+  badReviewCount: number;
+  reviewCount: number;
+}) {
+  const url = `${origin()}/admin/pros`;
+  const percent = Math.round((params.badReviewCount / params.reviewCount) * 100);
+  await sendEmail(
+    params.to,
+    `Quality concern: ${params.businessName}`,
+    layout(
+      'A verified pro is getting a lot of bad reviews',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> has ${params.badReviewCount} of ${params.reviewCount} reviews (${percent}%) at 2 stars or below.</p>
+       <p style="margin:0;">Worth a look at what's going wrong before more customers have a bad experience.</p>`,
+      url,
+      'Review pros',
+    ),
+  );
+}
+
+export async function sendProHighDeclineRateAlertEmail(params: {
+  to: string;
+  businessName: string;
+  declinedCount: number;
+  sampleSize: number;
+}) {
+  const url = `${origin()}/admin/pros`;
+  const percent = Math.round((params.declinedCount / params.sampleSize) * 100);
+  await sendEmail(
+    params.to,
+    `Quality concern: ${params.businessName}`,
+    layout(
+      'A verified pro is turning down most of their leads',
+      `<p style="margin:0 0 8px;"><strong>${params.businessName}</strong> has declined ${params.declinedCount} of their last ${params.sampleSize} matching leads (${percent}%) instead of quoting.</p>
+       <p style="margin:0;">Worth checking whether they're overcommitted, no longer taking this kind of work, or holding a spot another pro could use.</p>`,
+      url,
+      'Review pros',
+    ),
+  );
+}
+
 export async function sendNewProPendingEmail(params: { to: string; businessName: string }) {
   const url = `${origin()}/admin/pros`;
   await sendEmail(
