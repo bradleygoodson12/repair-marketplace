@@ -1,11 +1,15 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
+import { NotificationsList } from '@/app/notifications/notifications-list';
 import { Card, CardContent } from '@/components/ui/card';
+import { getAdminSession } from '@/lib/admin';
 import { SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { formatDate, formatCents } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 const THIRTY_DAYS_AGO_MS = 30 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_AGO_MS = 7 * 24 * 60 * 60 * 1000;
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -19,42 +23,70 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default async function AdminOverviewPage() {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const session = await getAdminSession();
+  if (!session) redirect('/');
+  const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_AGO_MS);
+  const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS_AGO_MS);
 
   const [
     customerCount,
     proCount,
+    activeProCount,
+    activeCustomerCount30d,
     requestCount,
     openRequestCount,
     bookingCount,
     activeSubscriptions,
     payPerQuoteProCount,
     quoteFeeRevenue30d,
+    quoteFeeRevenueLifetime,
     pendingVerificationCount,
+    newProApplications7d,
+    waitlistWaitingCount,
     openReportCount,
     newSignupsThisWeek,
     recentUsers,
+    pendingPros,
     recentRequests,
+    recentAlerts,
   ] = await Promise.all([
     prisma.user.count({ where: { role: 'CUSTOMER' } }),
     prisma.user.count({ where: { role: 'PRO' } }),
+    prisma.proProfile.count({ where: { verified: true, user: { suspended: false } } }),
+    prisma.user.count({ where: { role: 'CUSTOMER', requests: { some: { createdAt: { gte: thirtyDaysAgo } } } } }),
     prisma.serviceRequest.count(),
     prisma.serviceRequest.count({ where: { status: { in: ['OPEN', 'QUOTED'] } } }),
     prisma.booking.count(),
     prisma.proProfile.count({ where: { subscriptionStatus: 'ACTIVE' } }),
     prisma.proProfile.count({ where: { billingMode: 'PAY_PER_QUOTE' } }),
     prisma.quote.aggregate({
-      where: { quoteFeePaidAt: { gte: new Date(Date.now() - THIRTY_DAYS_AGO_MS) } },
+      where: { quoteFeePaidAt: { gte: thirtyDaysAgo } },
+      _sum: { quoteFeeRequiredCents: true },
+    }),
+    prisma.quote.aggregate({
+      where: { quoteFeePaidAt: { not: null } },
       _sum: { quoteFeeRequiredCents: true },
     }),
     prisma.proProfile.count({ where: { verified: false } }),
+    prisma.proProfile.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.categoryWaitlistEntry.count({ where: { status: 'WAITING' } }),
     prisma.report.count({ where: { status: 'OPEN' } }),
     prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
     prisma.user.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+    prisma.proProfile.findMany({
+      where: { verified: false },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
     prisma.serviceRequest.findMany({
       orderBy: { createdAt: 'desc' },
       take: 5,
       include: { category: true, customer: true },
+    }),
+    prisma.notification.findMany({
+      where: { userId: session.user.id, type: { not: 'NEW_MESSAGE' } },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
     }),
   ]);
 
@@ -65,13 +97,30 @@ export default async function AdminOverviewPage() {
         Pros pay Repair Bee either a monthly subscription or a flat fee per quote they send. Customers pay pros
         directly outside the app, so booking totals aren't platform revenue.
       </p>
+
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Alerts & notifications</h3>
+          <Link href="/notifications" className="text-xs font-medium text-brand-600 hover:underline">
+            View all
+          </Link>
+        </div>
+        <NotificationsList
+          notifications={recentAlerts.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() }))}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Customers" value={customerCount.toLocaleString()} />
+        <StatCard label="Active customers (30d)" value={activeCustomerCount30d.toLocaleString()} />
         <StatCard label="Pros" value={proCount.toLocaleString()} />
+        <StatCard label="Active pros" value={activeProCount.toLocaleString()} />
+        <StatCard label="New pro applications (7d)" value={newProApplications7d.toLocaleString()} />
+        <StatCard label="Pending verification" value={pendingVerificationCount.toLocaleString()} />
+        <StatCard label="Waitlist (waiting)" value={waitlistWaitingCount.toLocaleString()} />
         <StatCard label="Total job requests" value={requestCount.toLocaleString()} />
         <StatCard label="Open requests" value={openRequestCount.toLocaleString()} />
         <StatCard label="Bookings" value={bookingCount.toLocaleString()} />
-        <StatCard label="Pending verification" value={pendingVerificationCount.toLocaleString()} />
         <StatCard label="Open reports" value={openReportCount.toLocaleString()} />
         <StatCard label="Active subscriptions" value={activeSubscriptions.toLocaleString()} />
         <StatCard
@@ -82,6 +131,10 @@ export default async function AdminOverviewPage() {
         <StatCard
           label="Quote fee revenue (30d)"
           value={formatCents(quoteFeeRevenue30d._sum.quoteFeeRequiredCents ?? 0)}
+        />
+        <StatCard
+          label="Quote fee revenue (lifetime)"
+          value={formatCents(quoteFeeRevenueLifetime._sum.quoteFeeRequiredCents ?? 0)}
         />
         <StatCard label="New signups (7d)" value={newSignupsThisWeek.toLocaleString()} />
       </div>
@@ -105,6 +158,27 @@ export default async function AdminOverviewPage() {
               )}
               <Link href="/admin/users" className="text-xs font-medium text-brand-600 hover:underline">
                 View all users
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <h3 className="mb-3 font-semibold text-gray-900">Pros awaiting verification</h3>
+          <Card>
+            <CardContent className="flex flex-col gap-3">
+              {pendingPros.length === 0 ? (
+                <p className="text-sm text-gray-500">Nothing waiting on review.</p>
+              ) : (
+                pendingPros.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm">
+                    <span className="truncate text-gray-900">{p.businessName}</span>
+                    <span className="flex-shrink-0 text-gray-400">{formatDate(p.createdAt)}</span>
+                  </div>
+                ))
+              )}
+              <Link href="/admin/pros" className="text-xs font-medium text-brand-600 hover:underline">
+                Review pros
               </Link>
             </CardContent>
           </Card>

@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth';
 import { deriveServiceLocation, hasOpenCapacity, offerNextWaitlistSpot } from '@/lib/capacity';
 import { sendNewProPendingEmail, sendProWelcomeEmail, sendWaitlistJoinedEmail } from '@/lib/email';
 import { isInLaunchArea, OUT_OF_LAUNCH_AREA_MESSAGE } from '@/lib/launch-area';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 
@@ -134,9 +135,19 @@ export async function POST(req: Request) {
 
   if (!existingProfile) {
     after(async () => {
-      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true, email: true } });
       await Promise.all(
         admins.map((admin) => sendNewProPendingEmail({ to: admin.email, businessName: profile.businessName })),
+      );
+      await Promise.all(
+        admins.map((admin) =>
+          notify({
+            userId: admin.id,
+            type: 'NEW_PRO_PENDING',
+            title: `${profile.businessName} is awaiting verification`,
+            url: '/admin/pros',
+          }),
+        ),
       );
     });
     if (session.user.email) {

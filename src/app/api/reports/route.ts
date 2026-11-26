@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -48,6 +49,18 @@ export async function POST(req: Request) {
       details: details || null,
     },
   });
+
+  const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+  await Promise.all(
+    admins.map((admin) =>
+      notify({
+        userId: admin.id,
+        type: 'NEW_REPORT',
+        title: `New report: ${reason.replace('_', ' ').toLowerCase()}`,
+        url: '/admin/reports',
+      }),
+    ),
+  );
 
   return NextResponse.json({ id: report.id });
 }
