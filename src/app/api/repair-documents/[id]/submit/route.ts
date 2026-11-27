@@ -106,6 +106,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           preferredDate: preferredDate ? new Date(preferredDate) : null,
           ccEmails,
           payAtCloseRequested: payAtCloseRequested ?? false,
+          referredByInspectorId: document.referredByInspectorId,
         },
       });
       if (validLineItemIds.has(item.id)) {

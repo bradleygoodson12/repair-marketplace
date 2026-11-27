@@ -404,6 +404,11 @@ model ServiceRequest {
   // lib/quote-recap.ts. Tracked per request rather than per property so a
   // later batch of requests on the same address still gets its own recap.
   quoteRecapSentAt    DateTime?
+  // Set when this request traces back to an inspector's referral link (see
+  // InspectorPartner) — carried over from the RepairDocument it was created
+  // from, if any, so referral performance can be queried per request/status
+  // without walking back through the document each time.
+  referredByInspectorId String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -416,10 +421,12 @@ model ServiceRequest {
   repairLineItem RepairLineItem?
   reports  Report[]
   leadDismissals ProLeadDismissal[]
+  referredByInspector InspectorPartner? @relation(fields: [referredByInspectorId], references: [id])
 
   @@index([customerId])
   @@index([categoryId])
   @@index([status])
+  @@index([referredByInspectorId])
 }
 
 // Lets a pro clear a lead off their own dashboard without touching the
@@ -597,12 +604,42 @@ model RepairDocument {
   extractedCity         String?
   extractedState        String?
   extractedZip          String?
+  // Set when the upload came in through an inspector's referral link (see
+  // InspectorPartner) — carried forward onto each ServiceRequest created at
+  // submit time, since one document can become several requests.
+  referredByInspectorId String?
   createdAt        DateTime       @default(now())
 
   customer  User             @relation(fields: [customerId], references: [id], onDelete: Cascade)
   lineItems RepairLineItem[]
+  referredByInspector InspectorPartner? @relation(fields: [referredByInspectorId], references: [id])
 
   @@index([customerId])
+  @@index([referredByInspectorId])
+}
+
+// A home inspector (or inspection company) whose clients get referred to
+// Repair Bee via a dedicated link/QR code after their inspection. Created by
+// an admin for now (see /admin/inspectors) rather than self-serve signup —
+// referral volume is low enough in the pilot phase that hand-onboarding is
+// simpler than building a signup flow nobody's asked for yet.
+model InspectorPartner {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  companyName  String
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  // Shown on the co-branded landing page (/inspectors/[slug]); optional since
+  // not every inspector will have one on hand at onboarding time.
+  logoUrl      String?
+  // Lets a referral link be switched off (e.g. a pilot ends) without losing
+  // the historical attribution on requests it already generated.
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  repairDocuments RepairDocument[]
+  serviceRequests ServiceRequest[]
 }
 
 model RepairLineItem {

@@ -21,6 +21,10 @@ const schema = z.object({
   fileUrl: blobUrl,
   filename: z.string().min(1),
   supportingDocumentUrls: z.array(blobUrl).default([]),
+  // Inspector referral slug, if this upload came in via an inspector's link
+  // (see InspectorPartner) — resolved below rather than trusted as-is, since
+  // it's just a query param anyone could edit.
+  inspectorRef: z.string().nullish(),
 });
 
 export async function POST(req: Request) {
@@ -38,7 +42,11 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { fileUrl, filename, supportingDocumentUrls } = parsed.data;
+  const { fileUrl, filename, supportingDocumentUrls, inspectorRef } = parsed.data;
+
+  const inspector = inspectorRef
+    ? await prisma.inspectorPartner.findUnique({ where: { slug: inspectorRef, active: true } })
+    : null;
 
   const document = await prisma.repairDocument.create({
     data: {
@@ -47,6 +55,7 @@ export async function POST(req: Request) {
       originalFilename: filename,
       supportingDocumentUrls,
       status: 'PROCESSING',
+      referredByInspectorId: inspector?.id ?? null,
     },
   });
 

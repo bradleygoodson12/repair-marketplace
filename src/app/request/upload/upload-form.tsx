@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DocumentUploader } from '@/components/document-uploader';
 import { MultiFileUploader } from '@/components/multi-file-uploader';
 
-export function UploadRepairDocumentForm() {
+export function UploadRepairDocumentForm({ inspectorRef }: { inspectorRef?: string | null }) {
   const router = useRouter();
   const [file, setFile] = useState<{ url: string; filename: string } | null>(null);
   const [supportingDocumentUrls, setSupportingDocumentUrls] = useState<string[]>([]);
@@ -24,7 +24,12 @@ export function UploadRepairDocumentForm() {
       const res = await fetch('/api/repair-documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl: file.url, filename: file.filename, supportingDocumentUrls }),
+        body: JSON.stringify({
+          fileUrl: file.url,
+          filename: file.filename,
+          supportingDocumentUrls,
+          inspectorRef,
+        }),
         signal: AbortSignal.timeout(15_000),
       });
 
