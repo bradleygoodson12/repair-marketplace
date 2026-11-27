@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import type { PortfolioPhoto } from '@/components/portfolio-photo-uploader';
 
 import { ProProfileForm } from './profile-form';
 
@@ -25,7 +27,7 @@ interface ProfileValues {
   isLicensed: boolean;
   isInsured: boolean;
   licenseDocumentUrls: string[];
-  portfolioUrls: string[];
+  portfolioPhotos: PortfolioPhoto[];
 }
 
 export function EditProfileToggle({
@@ -39,7 +41,29 @@ export function EditProfileToggle({
   fullCategoryIds?: string[];
   waitlistedCategoryIds?: string[];
 }) {
-  const [editing, setEditing] = useState(false);
+  const searchParams = useSearchParams();
+  const openOnLoad = searchParams.get('editProfile') === 'portfolio';
+  const [editing, setEditing] = useState(openOnLoad);
+
+  // Lets a link elsewhere on the dashboard (e.g. the "add portfolio photos"
+  // nudge) deep-link straight into this form, already open and scrolled to
+  // the right section, instead of making the pro find and click "Edit
+  // business profile" themselves first. A plain `useState(openOnLoad)`
+  // initializer only captures the value at first mount — this component
+  // stays mounted across a same-page client navigation (only the query
+  // string changes), so an effect is needed to react to openOnLoad flipping
+  // true afterward too, not just on first render.
+  useEffect(() => {
+    if (openOnLoad) setEditing(true);
+  }, [openOnLoad]);
+
+  useEffect(() => {
+    if (!editing || !openOnLoad) return;
+    const id = requestAnimationFrame(() => {
+      document.getElementById('portfolio-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [editing, openOnLoad]);
 
   if (!editing) {
     return (

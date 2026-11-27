@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { PhotoUploader } from '@/components/photo-uploader';
 import { MultiFileUploader } from '@/components/multi-file-uploader';
+import { PortfolioPhotoUploader, type PortfolioPhoto } from '@/components/portfolio-photo-uploader';
 
 interface CategoryOption {
   id: string;
@@ -26,7 +27,7 @@ interface ProfileValues {
   isLicensed: boolean;
   isInsured: boolean;
   licenseDocumentUrls: string[];
-  portfolioUrls: string[];
+  portfolioPhotos: PortfolioPhoto[];
 }
 
 export function ProProfileForm({
@@ -57,7 +58,7 @@ export function ProProfileForm({
   const [isLicensed, setIsLicensed] = useState(initialValues?.isLicensed ?? false);
   const [isInsured, setIsInsured] = useState(initialValues?.isInsured ?? false);
   const [licenseDocumentUrls, setLicenseDocumentUrls] = useState<string[]>(initialValues?.licenseDocumentUrls ?? []);
-  const [portfolioUrls, setPortfolioUrls] = useState<string[]>(initialValues?.portfolioUrls ?? []);
+  const [portfolioPhotos, setPortfolioPhotos] = useState<PortfolioPhoto[]>(initialValues?.portfolioPhotos ?? []);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -108,7 +109,7 @@ export function ProProfileForm({
         isLicensed,
         isInsured,
         licenseDocumentUrls,
-        portfolioUrls,
+        portfolioPhotos,
       }),
     });
 
@@ -275,10 +276,14 @@ export function ProProfileForm({
           <MultiFileUploader value={licenseDocumentUrls} onChange={setLicenseDocumentUrls} max={5} />
         </div>
       </div>
-      <div>
+      <div id="portfolio-photos" className="scroll-mt-20">
         <label className="mb-1 block text-sm font-medium text-gray-700">Portfolio photos (optional)</label>
-        <p className="mb-2 text-xs text-gray-500">Show customers examples of your past work.</p>
-        <PhotoUploader value={portfolioUrls} onChange={setPortfolioUrls} max={12} />
+        <p className="mb-2 text-xs text-gray-500">
+          {initialValues
+            ? 'Show customers examples of your past work.'
+            : 'Pros who add a few photos of past jobs get noticed and chosen more often — add some now to start strong.'}
+        </p>
+        <PortfolioPhotoUploader value={portfolioPhotos} onChange={setPortfolioPhotos} max={12} />
       </div>
       {notice && <p className="text-sm text-amber-700">{notice}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}

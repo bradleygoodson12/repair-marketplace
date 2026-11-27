@@ -36,6 +36,7 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
     include: {
       categories: { include: { category: true } },
       reviews: { include: { customer: true }, orderBy: { createdAt: 'desc' }, take: 10 },
+      portfolioPhotos: { orderBy: { order: 'asc' } },
     },
   });
 
@@ -152,18 +153,29 @@ export default async function ProProfilePage({ params }: { params: Promise<{ id:
         </CardContent>
       </Card>
 
-      {pro.portfolioUrls.length > 0 && (
+      {pro.portfolioPhotos.length > 0 && (
         <div className="mb-6">
           <h2 className="mb-3 text-lg font-bold text-gray-900">Past work</h2>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {pro.portfolioUrls.map((url) => (
-              <a key={url} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
+            {pro.portfolioPhotos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photo.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block self-start overflow-hidden rounded-lg"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={url}
-                  alt=""
-                  className="aspect-square h-full w-full object-cover transition hover:opacity-90"
+                  src={photo.url}
+                  alt={photo.caption ?? ''}
+                  className="aspect-square w-full object-cover transition hover:opacity-90"
                 />
+                {photo.caption && (
+                  <p className="mt-1 truncate text-xs text-gray-500" title={photo.caption}>
+                    {photo.caption}
+                  </p>
+                )}
               </a>
             ))}
           </div>

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { authOptions } from '@/lib/auth';
 import { deriveServiceLocation, getFullCategoryIds } from '@/lib/capacity';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
@@ -35,6 +36,7 @@ export default async function ProDashboardPage() {
       categories: true,
       quotes: { include: { request: true } },
       quickQuoteTemplates: { orderBy: { createdAt: 'asc' } },
+      portfolioPhotos: { orderBy: { order: 'asc' } },
     },
   });
 
@@ -190,6 +192,8 @@ export default async function ProDashboardPage() {
     .filter((q) => q.status === 'PENDING' && (!q.quoteFeeRequiredCents || q.quoteFeePaidAt))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+  const portfolioPhotos = proProfile.portfolioPhotos.map((p) => ({ url: p.url, caption: p.caption ?? '' }));
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <Suspense fallback={null}>
@@ -262,27 +266,45 @@ export default async function ProDashboardPage() {
         unreadMessageCount={unreadMessageCount}
       />
 
+      {portfolioPhotos.length === 0 && (
+        <Card className="mb-4 border-brand-200 bg-brand-50/40">
+          <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-gray-900">Add photos of your work — 0/12 added</p>
+              <p className="text-sm text-gray-600">
+                Pros with portfolio photos get noticed and chosen more often. Show customers what you can do.
+              </p>
+            </div>
+            <Link href="/dashboard/pro?editProfile=portfolio#portfolio-photos" className="flex-shrink-0">
+              <Button size="sm">Add photos</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="mb-4">
-        <EditProfileToggle
-          categories={categories}
-          fullCategoryIds={[...fullCategoryIds]}
-          waitlistedCategoryIds={myWaitlistEntries.filter((e) => e.status === 'WAITING').map((e) => e.categoryId)}
-          initialValues={{
-            businessName: proProfile.businessName,
-            bio: proProfile.bio,
-            yearsExperience: proProfile.yearsExperience,
-            hourlyRateCents: proProfile.hourlyRateCents,
-            serviceZip: proProfile.serviceZip,
-            serviceRadiusMiles: proProfile.serviceRadiusMiles,
-            categoryIds,
-            photoUrl: proProfile.photoUrl,
-            licenseNumber: proProfile.licenseNumber,
-            isLicensed: proProfile.isLicensed,
-            isInsured: proProfile.isInsured,
-            licenseDocumentUrls: proProfile.licenseDocumentUrls,
-            portfolioUrls: proProfile.portfolioUrls,
-          }}
-        />
+        <Suspense fallback={null}>
+          <EditProfileToggle
+            categories={categories}
+            fullCategoryIds={[...fullCategoryIds]}
+            waitlistedCategoryIds={myWaitlistEntries.filter((e) => e.status === 'WAITING').map((e) => e.categoryId)}
+            initialValues={{
+              businessName: proProfile.businessName,
+              bio: proProfile.bio,
+              yearsExperience: proProfile.yearsExperience,
+              hourlyRateCents: proProfile.hourlyRateCents,
+              serviceZip: proProfile.serviceZip,
+              serviceRadiusMiles: proProfile.serviceRadiusMiles,
+              categoryIds,
+              photoUrl: proProfile.photoUrl,
+              licenseNumber: proProfile.licenseNumber,
+              isLicensed: proProfile.isLicensed,
+              isInsured: proProfile.isInsured,
+              licenseDocumentUrls: proProfile.licenseDocumentUrls,
+              portfolioPhotos,
+            }}
+          />
+        </Suspense>
       </div>
 
       <SubscriptionCard

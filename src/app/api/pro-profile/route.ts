@@ -27,7 +27,15 @@ const schema = z.object({
   isLicensed: z.boolean().optional(),
   isInsured: z.boolean().optional(),
   licenseDocumentUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(5).optional(),
-  portfolioUrls: z.array(z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.')).max(12).optional(),
+  portfolioPhotos: z
+    .array(
+      z.object({
+        url: z.string().url().refine(isOwnBlobUrl, 'Must be an uploaded file.'),
+        caption: z.string().trim().max(140).optional().default(''),
+      }),
+    )
+    .max(12)
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -41,7 +49,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { categoryIds, ...profileData } = parsed.data;
+  const { categoryIds, portfolioPhotos, ...profileData } = parsed.data;
 
   const existingProfile = await prisma.proProfile.findUnique({
     where: { userId: session.user.id },
@@ -90,6 +98,18 @@ export async function POST(req: Request) {
   await prisma.proProfileCategory.createMany({
     data: finalCategoryIds.map((categoryId) => ({ proProfileId: profile.id, categoryId })),
   });
+
+  if (portfolioPhotos) {
+    await prisma.portfolioPhoto.deleteMany({ where: { proProfileId: profile.id } });
+    await prisma.portfolioPhoto.createMany({
+      data: portfolioPhotos.map((p, order) => ({
+        proProfileId: profile.id,
+        url: p.url,
+        caption: p.caption || null,
+        order,
+      })),
+    });
+  }
 
   let waitlistedCategoryNames: string[] = [];
   if (fullCategoryIds.length > 0) {

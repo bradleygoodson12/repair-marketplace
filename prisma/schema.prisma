@@ -219,10 +219,6 @@ model ProProfile {
   // insurance, etc.) for admins to spot-check — never required, never
   // shown publicly.
   licenseDocumentUrls String[] @default([])
-  // Past-work gallery shown on the public profile — the single biggest
-  // trust signal in home services ("show me what you've actually done"),
-  // separate from the one storefront photoUrl above.
-  portfolioUrls     String[] @default([])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -233,9 +229,30 @@ model ProProfile {
   quickQuoteTemplates QuickQuoteTemplate[]
   waitlistEntries     CategoryWaitlistEntry[]
   leadDismissals      ProLeadDismissal[]
+  // Past-work gallery shown on the public profile — the single biggest
+  // trust signal in home services ("show me what you've actually done"),
+  // separate from the one storefront photoUrl above. A real table (not a
+  // plain string array) so each photo can carry its own caption.
+  portfolioPhotos     PortfolioPhoto[]
 
   @@index([serviceZip])
   @@index([serviceCity, serviceState])
+}
+
+model PortfolioPhoto {
+  id           String   @id @default(cuid())
+  proProfileId String
+  url          String
+  caption      String?
+  // Display order on the public profile and in the dashboard editor —
+  // reassigned to match array position on every save, so dragging isn't
+  // needed to reorder, just re-save with the new order.
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  proProfile ProProfile @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+
+  @@index([proProfileId])
 }
 
 enum WaitlistStatus {
