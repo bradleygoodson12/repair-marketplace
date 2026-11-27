@@ -376,6 +376,11 @@ model ServiceRequest {
   // so a daily cron check doesn't resend it every run (see
   // lib/request-expiry.ts).
   expiryReminderSentAt DateTime?
+  // Set once this (now-expired) request's quotes have been folded into a
+  // property-level recap sent to the customer/agent — see
+  // lib/quote-recap.ts. Tracked per request rather than per property so a
+  // later batch of requests on the same address still gets its own recap.
+  quoteRecapSentAt    DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 

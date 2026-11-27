@@ -14,9 +14,9 @@ function origin() {
   return process.env.NEXTAUTH_URL || 'http://localhost:3000';
 }
 
-function layout(heading: string, bodyHtml: string, ctaUrl: string, ctaLabel: string) {
+function layout(heading: string, bodyHtml: string, ctaUrl: string, ctaLabel: string, maxWidthPx = 480) {
   return `
-<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden;">
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: ${maxWidthPx}px; margin: 0 auto; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden;">
   <div style="background:#09090b; padding:20px 24px;">
     <span style="color:#ffffff; font-size:20px; font-weight:700;">Repair <span style="color:#f0b429;">Bee</span></span>
   </div>
@@ -29,13 +29,18 @@ function layout(heading: string, bodyHtml: string, ctaUrl: string, ctaLabel: str
 </div>`;
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: { filename: string; content: string; contentType: string }[],
+) {
   if (!resend) {
     console.log(`[email] RESEND_API_KEY not set — skipping "${subject}" to ${to}`);
     return;
   }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    await resend.emails.send({ from: FROM, to, subject, html, attachments });
   } catch (error) {
     console.error(`[email] Failed to send "${subject}" to ${to}:`, error);
   }
@@ -265,6 +270,65 @@ export async function sendRequestExpiredEmail(params: { to: string; requestTitle
       url,
       'View & re-submit',
     ),
+  );
+}
+
+export interface QuoteRecapRow {
+  categoryName: string;
+  businessName: string;
+  priceCents: number;
+  isEstimate: boolean;
+  avgRating: number;
+  reviewCount: number;
+  email: string;
+  phone: string | null;
+  responseTimeMs: number;
+  responseTimeLabel: string;
+}
+
+export async function sendQuoteRecapEmail(params: { to: string; address: string; rows: QuoteRecapRow[]; csv: string }) {
+  const url = `${origin()}/dashboard/customer`;
+  const tableRows = params.rows
+    .map(
+      (r) => `<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${r.categoryName}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">
+          <strong>${r.businessName}</strong><br/>
+          <span style="color:#a1a1aa;font-size:12px;">
+            ${r.avgRating > 0 ? `${r.avgRating.toFixed(1)}★ (${r.reviewCount})` : 'No ratings yet'} &middot; responded in ${r.responseTimeLabel}
+          </span>
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${formatCents(r.priceCents)}${r.isEstimate ? ' (est.)' : ''}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;"><a href="mailto:${r.email}" style="color:#b06f12;">${r.email}</a></td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${r.phone ? `<a href="tel:${r.phone}" style="color:#b06f12;">${r.phone}</a>` : '—'}</td>
+      </tr>`,
+    )
+    .join('');
+
+  await sendEmail(
+    params.to,
+    `Your quote recap — ${params.address}`,
+    layout(
+      'Here are the quotes you received',
+      `<p style="margin:0 0 14px;">These requests at <strong>${params.address}</strong> closed without a booking, but ${params.rows.length} quote${params.rows.length === 1 ? '' : 's'} came in before they did — listed here with the highest-rated, fastest-responding pros first.</p>
+       <table style="width:100%;border-collapse:collapse;font-size:13px;">
+         <thead>
+           <tr style="text-align:left;color:#71717a;">
+             <th style="padding:6px 10px;border-bottom:2px solid #e4e4e7;">Trade</th>
+             <th style="padding:6px 10px;border-bottom:2px solid #e4e4e7;">Pro</th>
+             <th style="padding:6px 10px;border-bottom:2px solid #e4e4e7;">Quote</th>
+             <th style="padding:6px 10px;border-bottom:2px solid #e4e4e7;">Email</th>
+             <th style="padding:6px 10px;border-bottom:2px solid #e4e4e7;">Phone</th>
+           </tr>
+         </thead>
+         <tbody>${tableRows}</tbody>
+       </table>
+       <p style="margin:16px 0 0;">A copy is also attached as a spreadsheet.</p>`,
+      url,
+      'View your dashboard',
+      640,
+    ),
+    [{ filename: 'quote-recap.csv', content: params.csv, contentType: 'text/csv' }],
   );
 }
 

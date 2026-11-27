@@ -8,6 +8,7 @@ import {
 } from '@/lib/email';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
+import { sendQuoteRecaps } from '@/lib/quote-recap';
 import { expireStaleRequests, sendExpiryReminders } from '@/lib/request-expiry';
 import { zipDistanceMiles } from '@/lib/zip';
 
@@ -212,6 +213,7 @@ export async function GET(req: Request) {
   const remindersSent = await sendAppointmentReminders();
   const expiryRemindersSent = await sendExpiryReminders();
   const expired = await expireStaleRequests();
+  const quoteRecapsSent = await sendQuoteRecaps();
 
   return NextResponse.json({
     checked: pros.length,
@@ -219,5 +221,6 @@ export async function GET(req: Request) {
     remindersSent,
     expiryRemindersSent,
     expired,
+    quoteRecapsSent,
   });
 }
