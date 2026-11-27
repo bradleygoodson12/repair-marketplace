@@ -678,6 +678,25 @@ model RateLimitHit {
   @@index([key, createdAt])
 }
 
+// Captured by reportAdminError (src/lib/admin-alerts.ts) — either from the
+// global Next.js onRequestError hook (src/instrumentation.ts), which catches
+// any error that escapes a route/render uncaught, or from a specific
+// deliberately-caught failure path that's worth surfacing on its own (e.g.
+// PDF extraction). Admin alert emails are rate-limited per source, but every
+// occurrence still lands here so nothing is lost between alerts.
+model ErrorLog {
+  id         String    @id @default(cuid())
+  source     String
+  message    String    @db.Text
+  stack      String?   @db.Text
+  context    Json?
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([resolvedAt])
+}
+
 enum ReportReason {
   SPAM
   INAPPROPRIATE

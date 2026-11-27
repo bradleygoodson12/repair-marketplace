@@ -2,11 +2,14 @@ import { getServerSession } from 'next-auth';
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 
+import { reportAdminError } from '@/lib/admin-alerts';
 import { isOwnBlobUrl } from '@/lib/attachments';
 import { authOptions } from '@/lib/auth';
 import { extractRepairItemsFromPdf } from '@/lib/anthropic';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
+
+const NO_ITEMS_FOUND_MESSAGE = "We couldn't find any repair items in that document.";
 
 // Claude can take well past a normal request/response cycle to read and
 // analyze a multi-page PDF. Rather than make the agent stare at a spinner
@@ -68,7 +71,7 @@ export async function POST(req: Request) {
       const extracted = await extractRepairItemsFromPdf(fileUrl, categories);
 
       if (extracted.items.length === 0) {
-        throw new Error("We couldn't find any repair items in that document.");
+        throw new Error(NO_ITEMS_FOUND_MESSAGE);
       }
 
       await prisma.$transaction([
@@ -105,6 +108,14 @@ export async function POST(req: Request) {
           errorMessage: error instanceof Error ? error.message : 'Analysis failed.',
         },
       });
+
+      // A document with nothing extractable is an expected outcome the
+      // customer sees directly, not a bug — only alert on anything else
+      // (API/network failures, a bad response shape, a DB error).
+      const expected = error instanceof Error && error.message === NO_ITEMS_FOUND_MESSAGE;
+      if (!expected) {
+        await reportAdminError('repair-documents:extract', error, { documentId: document.id });
+      }
     }
   });
 

@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { getAdminSession } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 
+import { DeleteUserButton } from './delete-user-button';
 import { SuspendButton } from './suspend-button';
 
 export default async function AdminUsersPage() {
@@ -43,7 +44,12 @@ export default async function AdminUsersPage() {
                   {formatDate(u.createdAt)}
                 </p>
               </div>
-              {u.id !== session?.user.id && <SuspendButton userId={u.id} suspended={u.suspended} />}
+              {u.id !== session?.user.id && (
+                <div className="flex flex-shrink-0 items-center gap-3">
+                  <SuspendButton userId={u.id} suspended={u.suspended} />
+                  <DeleteUserButton userId={u.id} name={u.name} />
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

@@ -737,6 +737,21 @@ export async function sendProHighDeclineRateAlertEmail(params: {
   );
 }
 
+export async function sendAdminErrorAlertEmail(params: { to: string; source: string; message: string }) {
+  const url = `${origin()}/admin/errors`;
+  await sendEmail(
+    params.to,
+    `[Repair Bee] Error in ${params.source}`,
+    layout(
+      'Something threw an error',
+      `<p style="margin:0 0 8px;"><strong>${params.source}</strong></p>
+       <p style="margin:0; font-family: monospace; font-size:13px; color:#52525b;">${params.message}</p>`,
+      url,
+      'View error log',
+    ),
+  );
+}
+
 export async function sendNewProPendingEmail(params: { to: string; businessName: string }) {
   const url = `${origin()}/admin/pros`;
   await sendEmail(
