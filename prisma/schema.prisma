@@ -385,6 +385,12 @@ model ServiceRequest {
   // quote notification for this request, so everyone sees the same thing
   // without the agent forwarding emails by hand.
   ccEmails            String[]      @default([])
+  // Customer/agent checked a box at submission saying they'd welcome a
+  // pay-at-closing arrangement if a pro is willing to offer it — shown to
+  // pros on the lead as a factor in deciding whether/how to bid. Not a
+  // guarantee or a term Repair Bee enforces; pros and customers still work
+  // out payment directly between themselves.
+  payAtCloseRequested Boolean       @default(false)
   // Set when this request was created from a RepairDocument line item, so
   // pros have a quick pointer into a long attached report instead of
   // having to search the whole thing.

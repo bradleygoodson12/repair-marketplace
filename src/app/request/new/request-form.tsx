@@ -50,6 +50,7 @@ export function RequestForm({
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [phone, setPhone] = useState(initialPhone ?? '');
   const [ccEmails, setCcEmails] = useState<string[]>(['']);
+  const [payAtCloseRequested, setPayAtCloseRequested] = useState(false);
   const [postedAsAgent, setPostedAsAgent] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -109,6 +110,7 @@ export function RequestForm({
         photoUrls,
         phone,
         ccEmails: ccEmails.map((e) => e.trim()).filter(Boolean),
+        payAtCloseRequested,
         postedAsAgent,
         clientName,
         clientEmail,
@@ -324,6 +326,23 @@ export function RequestForm({
           <label className="mb-1 block text-sm font-medium text-gray-700">Zip</label>
           <Input required value={zip} onChange={(e) => setZip(e.target.value)} />
         </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 p-3">
+        <label className="flex items-start gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            checked={payAtCloseRequested}
+            onChange={(e) => setPayAtCloseRequested(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300"
+          />
+          I&apos;d be open to paying at closing, if the pro offers it
+        </label>
+        <p className="mt-1 pl-6 text-xs text-gray-500">
+          Some pros may be willing to wait for payment until your sale closes. Checking this lets them know you&apos;d
+          welcome that option — it&apos;s not guaranteed, and you can always work out payment terms directly with the
+          pro.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

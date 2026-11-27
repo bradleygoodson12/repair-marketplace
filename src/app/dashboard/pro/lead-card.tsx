@@ -30,6 +30,7 @@ interface LeadCardProps {
     title: string;
     status: string;
     postedAsAgent: boolean;
+    payAtCloseRequested: boolean;
     category: { icon: string; name: string };
     property: { city: string; state: string; zip: string };
   };
@@ -87,6 +88,11 @@ export function LeadCard({
               {request.postedAsAgent && (
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
                   Agent referral
+                </span>
+              )}
+              {request.payAtCloseRequested && (
+                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800">
+                  Open to pay-at-close
                 </span>
               )}
               {myQuote && !paymentPending && <span className="text-xs font-medium text-brand-600">You quoted</span>}

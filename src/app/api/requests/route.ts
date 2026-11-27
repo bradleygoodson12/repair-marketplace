@@ -21,6 +21,7 @@ const schema = z.object({
   // Extra people (e.g. the agent's buyer/seller) who get a copy of every
   // quote notification for this request.
   ccEmails: z.array(z.string().trim().email()).max(5).optional().default([]),
+  payAtCloseRequested: z.boolean().optional(),
   postedAsAgent: z.boolean().optional(),
   clientName: z.string().max(200).optional(),
   clientEmail: z.string().email().max(200).optional().or(z.literal('')),
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
     photoUrls,
     phone,
     ccEmails,
+    payAtCloseRequested,
     postedAsAgent,
     clientName,
     clientEmail,
@@ -97,6 +99,7 @@ export async function POST(req: Request) {
         preferredDate: preferredDate ? new Date(preferredDate) : null,
         photoUrls: photoUrls ?? [],
         ccEmails,
+        payAtCloseRequested: payAtCloseRequested ?? false,
         postedAsAgent: postedAsAgent ?? false,
         clientName: postedAsAgent ? clientName?.trim() || null : null,
         clientEmail: postedAsAgent ? clientEmail?.trim() || null : null,

@@ -37,6 +37,8 @@ const schema = z.object({
   // Extra people (e.g. the agent's buyer/seller) who get a copy of every
   // quote notification for every request in this batch.
   ccEmails: z.array(z.string().trim().email()).max(5).optional().default([]),
+  // Same "applies to every request in this batch" reasoning as preferredDate.
+  payAtCloseRequested: z.boolean().optional(),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -57,7 +59,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { property, items, supportingDocumentUrls, preferredDate, phone, ccEmails } = parsed.data;
+  const { property, items, supportingDocumentUrls, preferredDate, phone, ccEmails, payAtCloseRequested } = parsed.data;
 
   // An id not among this document's AI-extracted line items is one the
   // customer added by hand on the review page — created fresh below instead
@@ -103,6 +105,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           sourcePageNumber: pageNumberById.get(item.id) ?? null,
           preferredDate: preferredDate ? new Date(preferredDate) : null,
           ccEmails,
+          payAtCloseRequested: payAtCloseRequested ?? false,
         },
       });
       if (validLineItemIds.has(item.id)) {

@@ -67,6 +67,7 @@ export function ReviewForm({
   const [preferredDate, setPreferredDate] = useState('');
   const [phone, setPhone] = useState(initialPhone ?? '');
   const [ccEmails, setCcEmails] = useState<string[]>(['']);
+  const [payAtCloseRequested, setPayAtCloseRequested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; title: string }[] | null>(null);
@@ -136,6 +137,7 @@ export function ReviewForm({
         preferredDate: preferredDate || null,
         phone,
         ccEmails: ccEmails.map((e) => e.trim()).filter(Boolean),
+        payAtCloseRequested,
       }),
     });
     const data = res.ok ? await res.json() : await res.json().catch(() => ({}));
@@ -340,6 +342,25 @@ export function ReviewForm({
               + Add another email
             </button>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <label className="flex items-start gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={payAtCloseRequested}
+              onChange={(e) => setPayAtCloseRequested(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+            />
+            I&apos;d be open to paying at closing, if the pro offers it
+          </label>
+          <p className="mt-1 pl-6 text-xs text-gray-500">
+            Some pros may be willing to wait for payment until your sale closes. Checking this lets them know you&apos;d
+            welcome that option, for every request below — it&apos;s not guaranteed, and you can always work out
+            payment terms directly with the pro.
+          </p>
         </CardContent>
       </Card>
 

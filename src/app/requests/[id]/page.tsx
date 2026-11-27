@@ -87,6 +87,11 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                 Agent referral
               </span>
             )}
+            {request.payAtCloseRequested && (
+              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800">
+                Open to pay-at-close
+              </span>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
           <p className="mt-1 text-sm text-gray-500">
