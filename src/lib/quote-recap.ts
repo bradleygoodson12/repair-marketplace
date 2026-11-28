@@ -1,6 +1,6 @@
 import { sendQuoteRecapEmail, type QuoteRecapRow } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
-import { formatCents } from '@/lib/utils';
+import { formatQuoteAmount } from '@/lib/utils';
 
 // Bounds how many not-yet-recapped expired requests one cron run inspects —
 // consistent with the bounded batches used elsewhere in this cron (see
@@ -35,7 +35,7 @@ export function buildCsv(rows: QuoteRecapRow[]): string {
       [
         r.categoryName,
         r.businessName,
-        formatCents(r.priceCents) + (r.isEstimate ? ' (est.)' : ''),
+        formatQuoteAmount(r.priceCents, r.priceMaxCents) + (r.isEstimate ? ' (est.)' : ''),
         r.avgRating > 0 ? `${r.avgRating.toFixed(1)} (${r.reviewCount} reviews)` : 'No ratings yet',
         r.responseTimeLabel,
         r.email,
@@ -105,6 +105,7 @@ export async function sendQuoteRecaps(): Promise<number> {
           categoryName: request.category.name,
           businessName: quote.proProfile.businessName,
           priceCents: quote.priceCents,
+          priceMaxCents: quote.priceMaxCents,
           isEstimate: quote.isEstimate,
           avgRating: quote.proProfile.avgRating,
           reviewCount: quote.proProfile.reviewCount,

@@ -10,12 +10,21 @@ import { QUOTE_PRICE_CENTS } from '@/lib/pricing';
 import { createQuoteFeeCheckoutSession } from '@/lib/quote-fee';
 import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
 
-const schema = z.object({
-  priceCents: z.number().int().positive(),
-  isEstimate: z.boolean().optional().default(false),
-  message: z.string().min(1),
-  estimatedDurationDays: z.number().int().positive().nullable().optional(),
-});
+const schema = z
+  .object({
+    priceCents: z.number().int().positive(),
+    priceMaxCents: z.number().int().positive().nullable().optional(),
+    isEstimate: z.boolean().optional().default(false),
+    message: z.string().min(1),
+    estimatedDurationDays: z.number().int().positive().nullable().optional(),
+  })
+  .refine((data) => !data.priceMaxCents || data.priceMaxCents > data.priceCents, {
+    message: 'The high end of a range must be more than the low end.',
+    path: ['priceMaxCents'],
+  })
+  // A range is inherently not a firm bid — enforced here rather than trusted
+  // from the client, so a mis-set checkbox can't produce a "firm" range.
+  .transform((data) => ({ ...data, isEstimate: data.priceMaxCents ? true : data.isEstimate }));
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -119,6 +128,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           propertyAddress,
           businessName: proProfile.businessName,
           priceCents: quote.priceCents,
+          priceMaxCents: quote.priceMaxCents,
           isEstimate: quote.isEstimate,
           requestId: request.id,
         }),
@@ -155,6 +165,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           requestTitle: request.title,
           businessName: proProfile.businessName,
           priceCents: quote.priceCents,
+          priceMaxCents: quote.priceMaxCents,
           isEstimate: quote.isEstimate,
           requestId: request.id,
         }),

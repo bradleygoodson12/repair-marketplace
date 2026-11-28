@@ -452,9 +452,17 @@ model Quote {
   requestId            String
   proProfileId         String
   priceCents           Int
-  // Whether priceCents is the pro's firm bid or a rough estimate subject to
-  // change once they're on site — shown to the customer as a label, not
-  // enforced any differently (same field, same accept flow either way).
+  // Set only for a range estimate, where it's the high end (priceCents is
+  // the low end) — null for an exact price or a single-number estimate.
+  // Implies isEstimate: true is enforced server-side whenever this is set,
+  // since a range is inherently not a firm bid.
+  priceMaxCents        Int?
+  // Whether priceCents (or the priceCents–priceMaxCents range) is the pro's
+  // firm bid or a rough estimate subject to change once they're on site —
+  // shown to the customer as a label. A range quote can still be accepted
+  // directly; the booking is created at the low end (priceCents), with any
+  // higher final cost billed as a Change Order once the pro is on site —
+  // same path as any other scope change discovered after booking.
   isEstimate           Boolean     @default(false)
   message              String      @db.Text
   estimatedDurationDays Int?

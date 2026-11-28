@@ -53,6 +53,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         requestId: quote.requestId,
         quoteId: quote.id,
         scheduledDate: new Date(),
+        // For a range quote, priceCents is the low end — books at that
+        // figure, with any higher final cost billed as a change order once
+        // the pro is on site, same as any other scope change found after
+        // booking.
         totalCents: quote.priceCents,
       },
     });

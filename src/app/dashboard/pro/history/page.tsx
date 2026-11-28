@@ -6,7 +6,7 @@ import type { Prisma, QuoteStatus, RequestStatus } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { formatCents, formatDate } from '@/lib/utils';
+import { formatDate, formatQuoteAmount } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 
 const FILTERS = [
@@ -101,7 +101,7 @@ export default async function ProJobHistoryPage({
                     </p>
                   </div>
                   <span className="text-sm font-medium text-gray-700">
-                    {formatCents(q.priceCents)}
+                    {formatQuoteAmount(q.priceCents, q.priceMaxCents)}
                     {q.isEstimate && <span className="ml-1 text-xs font-normal text-gray-400">(estimate)</span>}
                   </span>
                 </CardContent>

@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-import { formatCents } from '@/lib/utils';
+import { formatCents, formatQuoteAmount } from '@/lib/utils';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -178,11 +178,13 @@ export async function sendQuoteSubmittedEmail(params: {
   propertyAddress: string;
   businessName: string;
   priceCents: number;
+  priceMaxCents?: number | null;
   isEstimate: boolean;
   requestId: string;
 }) {
   const url = `${origin()}/requests/${params.requestId}`;
-  const amountLabel = params.isEstimate ? `Estimate: ${formatCents(params.priceCents)}` : formatCents(params.priceCents);
+  const amount = formatQuoteAmount(params.priceCents, params.priceMaxCents);
+  const amountLabel = params.isEstimate ? `Estimate: ${amount}` : amount;
   await sendEmail(
     params.to,
     `A pro quoted your job — "${params.requestTitle}"`,
@@ -277,6 +279,7 @@ export interface QuoteRecapRow {
   categoryName: string;
   businessName: string;
   priceCents: number;
+  priceMaxCents: number | null;
   isEstimate: boolean;
   avgRating: number;
   reviewCount: number;
@@ -298,7 +301,7 @@ export async function sendQuoteRecapEmail(params: { to: string; address: string;
             ${r.avgRating > 0 ? `${r.avgRating.toFixed(1)}★ (${r.reviewCount})` : 'No ratings yet'} &middot; responded in ${r.responseTimeLabel}
           </span>
         </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${formatCents(r.priceCents)}${r.isEstimate ? ' (est.)' : ''}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${formatQuoteAmount(r.priceCents, r.priceMaxCents)}${r.isEstimate ? ' (est.)' : ''}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;"><a href="mailto:${r.email}" style="color:#b06f12;">${r.email}</a></td>
         <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;">${r.phone ? `<a href="tel:${r.phone}" style="color:#b06f12;">${r.phone}</a>` : '—'}</td>
       </tr>`,
@@ -537,11 +540,13 @@ export async function sendQuoteRevisedEmail(params: {
   requestTitle: string;
   businessName: string;
   priceCents: number;
+  priceMaxCents?: number | null;
   isEstimate: boolean;
   requestId: string;
 }) {
   const url = `${origin()}/requests/${params.requestId}`;
-  const amountLabel = params.isEstimate ? `Estimate: ${formatCents(params.priceCents)}` : formatCents(params.priceCents);
+  const amount = formatQuoteAmount(params.priceCents, params.priceMaxCents);
+  const amountLabel = params.isEstimate ? `Estimate: ${amount}` : amount;
   await sendEmail(
     params.to,
     `Quote revised — "${params.requestTitle}"`,

@@ -9,6 +9,17 @@ export function formatCents(cents: number): string {
   return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
+// A quote's price as either one amount or, when priceMaxCents is set, a
+// "low–high" range — the one place this formatting lives so every quote
+// display (quote cards, dashboards, emails, the CSV recap) renders a range
+// the same way.
+export function formatQuoteAmount(priceCents: number, priceMaxCents?: number | null): string {
+  if (priceMaxCents && priceMaxCents > priceCents) {
+    return `${formatCents(priceCents)}–${formatCents(priceMaxCents)}`;
+  }
+  return formatCents(priceCents);
+}
+
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'short',

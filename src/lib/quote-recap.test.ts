@@ -8,6 +8,7 @@ function row(overrides: Partial<QuoteRecapRow>): QuoteRecapRow {
     categoryName: 'Plumbing',
     businessName: 'Acme Plumbing',
     priceCents: 10000,
+    priceMaxCents: null,
     isEstimate: false,
     avgRating: 0,
     reviewCount: 0,
@@ -73,6 +74,11 @@ describe('buildCsv', () => {
   it('marks an estimate and formats price as dollars', () => {
     const csv = buildCsv([row({ priceCents: 65000, isEstimate: true })]);
     expect(csv).toContain('$650.00 (est.)');
+  });
+
+  it('formats a range quote as low–high', () => {
+    const csv = buildCsv([row({ priceCents: 80000, priceMaxCents: 120000, isEstimate: true })]);
+    expect(csv).toContain('$800.00–$1,200.00 (est.)');
   });
 
   it('quotes a field that contains a comma', () => {

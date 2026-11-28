@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { deriveServiceLocation, getFullCategoryIds } from '@/lib/capacity';
 import { QUOTE_PRICE_CENTS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/pricing';
 import { prisma } from '@/lib/prisma';
-import { formatCents, formatDate } from '@/lib/utils';
+import { formatDate, formatQuoteAmount } from '@/lib/utils';
 import { zipDistanceMiles } from '@/lib/zip';
 
 import { AtAGlance } from './at-a-glance';
@@ -258,6 +258,7 @@ export default async function ProDashboardPage() {
           requestId: q.requestId,
           requestTitle: q.request.title,
           priceCents: q.priceCents,
+          priceMaxCents: q.priceMaxCents,
           isEstimate: q.isEstimate,
           createdAt: q.createdAt,
         }))}
@@ -346,7 +347,7 @@ export default async function ProDashboardPage() {
                   </Link>
                   <span className="text-sm font-medium text-gray-700">
                     {q.isEstimate ? 'Est. ' : ''}
-                    {formatCents(q.priceCents)}
+                    {formatQuoteAmount(q.priceCents, q.priceMaxCents)}
                   </span>
                 </CardContent>
               </Card>

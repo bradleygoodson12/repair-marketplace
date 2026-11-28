@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { formatCents, formatDate } from '@/lib/utils';
+import { formatDate, formatQuoteAmount } from '@/lib/utils';
 
 interface NewLead {
   id: string;
@@ -15,6 +15,7 @@ interface OpenQuote {
   requestId: string;
   requestTitle: string;
   priceCents: number;
+  priceMaxCents: number | null;
   isEstimate: boolean;
   createdAt: Date;
 }
@@ -103,7 +104,7 @@ export function AtAGlance({
                     <span className="text-gray-500">
                       {' '}
                       · {q.isEstimate ? 'Est. ' : ''}
-                      {formatCents(q.priceCents)} · {formatDate(q.createdAt)}
+                      {formatQuoteAmount(q.priceCents, q.priceMaxCents)} · {formatDate(q.createdAt)}
                     </span>
                   </Link>
                 </li>

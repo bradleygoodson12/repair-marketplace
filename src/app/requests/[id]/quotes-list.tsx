@@ -7,11 +7,12 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StarRating } from '@/components/star-rating';
-import { formatCents } from '@/lib/utils';
+import { formatQuoteAmount } from '@/lib/utils';
 
 interface QuoteData {
   id: string;
   priceCents: number;
+  priceMaxCents: number | null;
   isEstimate: boolean;
   message: string;
   estimatedDurationDays: number | null;
@@ -152,7 +153,7 @@ export function QuotesList({
 
                 <div className="flex items-baseline justify-between border-t border-gray-100 pt-3">
                   <span className="flex items-baseline gap-1.5">
-                    <span className="text-xl font-bold text-gray-900">{formatCents(q.priceCents)}</span>
+                    <span className="text-xl font-bold text-gray-900">{formatQuoteAmount(q.priceCents, q.priceMaxCents)}</span>
                     {q.isEstimate && (
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                         Estimate
