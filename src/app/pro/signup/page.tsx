@@ -29,6 +29,14 @@ export default function ProSignupLandingPage() {
               Sign up as a pro
             </Button>
           </Link>
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            className="mx-auto mt-10 w-full max-w-2xl rounded-xl border border-gray-800"
+          >
+            <source src="/pro-explainer.mp4" type="video/mp4" />
+          </video>
         </div>
       </section>
 
