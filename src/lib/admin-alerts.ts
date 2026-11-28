@@ -1,6 +1,5 @@
-import type { Prisma } from '@prisma/client';
-
 import { sendAdminErrorAlertEmail } from '@/lib/email';
+import { recordError } from '@/lib/error-log';
 import { notify } from '@/lib/notify';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -23,16 +22,7 @@ export async function reportAdminError(
   error: unknown,
   context?: Record<string, unknown>,
 ): Promise<void> {
-  const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack ?? null : null;
-
-  try {
-    await prisma.errorLog.create({
-      data: { source, message, stack, context: (context ?? undefined) as Prisma.InputJsonObject | undefined },
-    });
-  } catch (e) {
-    console.error('[admin-alerts] Failed to persist ErrorLog', e);
-  }
+  const { message } = await recordError(source, error, context);
 
   const allowed = await checkRateLimit(`admin-error-alert:${source}`, 1, 15 * 60 * 1000);
   if (!allowed) return;

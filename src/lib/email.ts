@@ -1,5 +1,9 @@
 import { Resend } from 'resend';
 
+import { recordError } from '@/lib/error-log';
+import { notify } from '@/lib/notify';
+import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { formatCents, formatQuoteAmount } from '@/lib/utils';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -39,10 +43,41 @@ async function sendEmail(
     console.log(`[email] RESEND_API_KEY not set — skipping "${subject}" to ${to}`);
     return;
   }
+  // The Resend SDK doesn't throw on an API/network failure — it resolves
+  // normally with { data: null, error }, so a plain try/catch here would
+  // never actually see a real send failure. Both paths funnel into the same
+  // handling below.
+  let sendError: unknown = null;
   try {
-    await resend.emails.send({ from: FROM, to, subject, html, attachments });
+    const result = await resend.emails.send({ from: FROM, to, subject, html, attachments });
+    sendError = result.error;
   } catch (error) {
-    console.error(`[email] Failed to send "${subject}" to ${to}:`, error);
+    sendError = error;
+  }
+
+  if (sendError) {
+    console.error(`[email] Failed to send "${subject}" to ${to}:`, sendError);
+
+    // In-app notification only — never an alert *email* here. If sending is
+    // broken (bad API key, unverified domain), an alert email would hit
+    // this exact failure path and loop forever. /admin/errors still gets
+    // every occurrence either way.
+    const { message } = await recordError('email:send', sendError, { to, subject });
+    const allowed = await checkRateLimit('admin-error-alert:email:send', 1, 15 * 60 * 1000);
+    if (allowed) {
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+      await Promise.all(
+        admins.map((admin) =>
+          notify({
+            userId: admin.id,
+            type: 'SYSTEM_ERROR',
+            title: 'Email sending is failing',
+            body: message,
+            url: '/admin/errors',
+          }),
+        ),
+      );
+    }
   }
 }
 
